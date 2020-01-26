@@ -1,0 +1,11 @@
+default:
+  # casinocoinServer: 'ws://192.168.1.4:6006'
+  casinocoinServer: 'wss://wst01.casinocoin.org:4443'
+  database:
+    type: 'postgres'
+    host: 'localhost'
+    port: 5432
+    username: 'postgres'
+    password: '0000'
+    database: 'datasetHistoricalDB'
+ 
