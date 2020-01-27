@@ -9,7 +9,10 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "incremental": true
+    "incremental": true,
+    "lib": [
+     "esnext.asynciterable"
+   ]
   },
   "exclude": ["node_modules", "dist"]
 }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SyncService } from './services/sync/sync.service';
 import { CasinocoinAPI } from '@casinocoin/libjs';
+import { SyncLedger } from './class/syncLedger';
 import * as config from 'yaml-config';
 const settings = config.readConfig('config.yml');
 
@@ -8,8 +9,6 @@ const settings = config.readConfig('config.yml');
     providers: [SyncService],
 })
 export class SyncModule {
-
-    public ledgerActually;
 
     constructor(private readonly syncService: SyncService) {
         const cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
@@ -19,8 +18,9 @@ export class SyncModule {
                 console.log('CSC Server: Connected');
             });
                 // get Ledger Actually
-            this.ledgerActually = await cscApi.getLedgerVersion();
-            console.log(this.ledgerActually);
+            const ledgerActually = await cscApi.getLedgerVersion();
+            // tslint:disable-next-line:no-unused-expression
+            new SyncLedger(ledgerActually);
         }).catch(console.error);
     }
     console: any;

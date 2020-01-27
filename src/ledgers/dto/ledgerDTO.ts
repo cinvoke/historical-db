@@ -2,16 +2,18 @@ import { TransactionDTO } from '../../transactions/dto/transactionDTO';
 
 export class LedgerDto {
     stateHash: string;
-    closeTime: Date;
+    closeTime: string;
     closeTimeResolution: number;
     closeFlags: number;
     ledgerHash: string;
     ledgerVersion: number;
     parentLedgerHash: string;
-    parentCloseTime: Date;
+    parentCloseTime: string;
     totalDrops: string;
     transactionHash: string;
-    transactions: TransactionDTO[];
-    rawTransactions: string;
-    rawState: string;
+    transactions?: object[];
+    rawTransactions?: string;
+    transactionHashes?: string[];
+    rawState?: string;
+    stateHashes?: string[];
 }

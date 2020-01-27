@@ -1,32 +1,11 @@
-import { Entity, Column, Unique, CreateDateColumn, PrimaryColumn } from 'typeorm';
-
-@Entity()
-@Unique(['id'])
-export class Transaction {
-
-    @Column('varchar', {nullable : true})
+export class TransactionModifiedDTO {
     ledgerHash: string;
-
-    @Column('integer', {nullable : true})
     ledgerVersion: number;
-
-    @Column('date', {nullable : true})
-    ledgerTimestamp: Date;
-
-    @Column('varchar', {nullable : true})
+    ledgerTimestamp: string;
     type: string;
-
-    @Column('varchar', {nullable : true})
     address: string;
-
-    @Column('integer', {nullable : true})
     sequence: number;
-
-    @Column('varchar', {nullable : true})
-    @PrimaryColumn()
     id: string;
-
-    @Column('simple-json', {nullable : true})
     specification: {
         source: {
             address: string,
@@ -45,8 +24,6 @@ export class Transaction {
             };
         };
     };
-
-    @Column('simple-json', {nullable : true})
     outcome: {
         result: string,
         fee: string,
@@ -54,10 +31,6 @@ export class Transaction {
         orderbookChanges: string,
         ledgerVersion: number,
         indexInLedger: number,
-        deliveredAmount: Array<{ currency: string, value: string, counterparty: string; }>,
+        deliveredAmount: Array<{ currency: string, value: string, counterparty: string; }>;
     };
-
-    @Column()
-    @CreateDateColumn()
-    createdAt: Date;
 }

@@ -1,4 +1,4 @@
-import {Entity, Column, Unique, CreateDateColumn, UpdateDateColumn, PrimaryColumn} from 'typeorm';
+import { Entity, Unique, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity()
 @Unique(['account'])
@@ -11,8 +11,8 @@ export class Account {
     @Column('integer', {nullable : true})
     sequence: number;
 
-    @Column('float', {nullable : true})
-    cscBalance: number;
+    @Column('simple-json', { nullable: true })
+    balances: any;
 
     @Column('varchar', {nullable : true})
     ledgerHash: string;
@@ -28,9 +28,6 @@ export class Account {
 
     @Column('varchar', {nullable : true})
     previousInitiatedTransactionID: string;
-
-    @Column('integer', {nullable : true})
-    T03Balance: number;
 
     @Column()
     @CreateDateColumn()

@@ -3,9 +3,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LedgersModule } from './ledgers/ledgers.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Account } from './accounts/entity/account.entity';
-import { Ledger } from './ledgers/entity/ledger.entity';
-import { Transaction } from './transactions/entity/transaction.entity';
 import { AccountsModule } from './accounts/accounts.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { SyncModule } from './sync-process/sync.module';
@@ -25,7 +22,7 @@ const settings = config.readConfig('config.yml');
       username: settings.database.username,
       password: settings.database.password,
       database: settings.database.database,
-      entities: [Ledger, Account, Transaction],
+      entities: ['dist/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
     AccountsModule,

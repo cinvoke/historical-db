@@ -1,7 +1,8 @@
 export class TransactionDTO {
-    type?: string;
-    address?: string;
-    sequence?: number;
+    type: string;
+    address: string;
+    sequence: number;
+    id: string;
     specification: {
         source: {
             address: string,
@@ -23,18 +24,10 @@ export class TransactionDTO {
     outcome: {
         result: string,
         fee: string,
-        balanceChanges: {
-            account: string,
-            value: string,
-            counterparty: string;
-        },
+        balanceChanges: Array<{ account: string, value: string, currency: string; }>,
         orderbookChanges: string,
         ledgerVersion: number,
         indexInLedger: number,
-        deliveredAmount: {
-            currency: string,
-            value: string,
-            counterparty: string;
-        };
+        deliveredAmount: Array<{ currency: string, value: string, counterparty: string; }>;
     };
 }

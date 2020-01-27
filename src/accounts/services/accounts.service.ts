@@ -6,11 +6,15 @@ import { Account } from '../entity/account.entity';
 @Injectable()
 export class AccountsService {
     constructor(
-        @InjectRepository(Account)
-        private readonly accountRepository: Repository<Account>,
-      ) {}
+      @InjectRepository(Account)
+      private readonly accountRepository: Repository<Account>,
+    ) {}
 
-      getAll(): Promise<Account[]> {
-        return this.accountRepository.find();
-      }
+    getAll(): Promise<Account[]> {
+      return this.accountRepository.find();
+    }
+
+    getAccount(account: string): Promise<Account> {
+      return this.accountRepository.findOne({account});
+    }
 }
