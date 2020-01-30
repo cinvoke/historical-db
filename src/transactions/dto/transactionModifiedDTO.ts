@@ -22,7 +22,8 @@ export class TransactionModifiedDTO {
                 value: string,
                 counterparty: string;
             };
-        };
+        },
+        memos?: Array<{ format: string; data: string }>;
     };
     outcome: {
         result: string,

@@ -2,7 +2,7 @@ import { Entity, Column, Unique, PrimaryColumn, CreateDateColumn } from 'typeorm
 
 @Entity()
 @Unique(['ledgerVersion'])
-export class Ledger {
+export class Ledgers {
 
     @Column('integer', {nullable : true})
     @PrimaryColumn()
@@ -43,9 +43,4 @@ export class Ledger {
 
     @Column('varchar', {nullable : true})
     transactionHash: string;
-
-    @Column('date')
-    @CreateDateColumn()
-    createdAt: Date;
-
 }

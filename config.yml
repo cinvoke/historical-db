@@ -7,5 +7,5 @@ default:
     port: 5432
     username: 'postgres'
     password: '0000'
-    database: 'datasetHistoricalDB'
+    database: 'historical_Proyect'
  

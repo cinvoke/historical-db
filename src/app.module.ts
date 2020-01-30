@@ -7,7 +7,12 @@ import { AccountsModule } from './accounts/accounts.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { SyncModule } from './sync-process/sync.module';
 import { SyncService } from './sync-process/services/sync/sync.service';
+import { Accounts } from './accounts/entity/account.entity';
+import { Transactions } from './transactions/entity/transaction.entity';
+import { Ledgers } from './ledgers/entity/ledger.entity';
+import { AccVersionModule } from './account-version/acc-version.module';
 import * as config from 'yaml-config';
+import { AccountVersions } from './account-version/entity/accountVersion.entiity';
 
 // load settings
 const settings = config.readConfig('config.yml');
@@ -22,12 +27,13 @@ const settings = config.readConfig('config.yml');
       username: settings.database.username,
       password: settings.database.password,
       database: settings.database.database,
-      entities: ['dist/**/*.entity{.ts,.js}'],
+      entities: [Transactions, Accounts, Ledgers, AccountVersions],
       synchronize: true,
     }),
     AccountsModule,
     TransactionsModule,
     SyncModule,
+    AccVersionModule,
   ],
   controllers: [AppController],
   providers: [AppService, SyncService],

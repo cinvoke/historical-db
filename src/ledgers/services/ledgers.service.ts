@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Ledger } from '../entity/ledger.entity';
+import { Ledgers } from '../entity/ledger.entity';
 
 @Injectable()
 export class LedgersService {
     constructor(
-        @InjectRepository(Ledger)
-        private readonly ledgerRepository: Repository<Ledger>,
+        @InjectRepository(Ledgers)
+        private readonly ledgerRepository: Repository<Ledgers>,
       ) {}
 
-      getAll(): Promise<Ledger[]> {
+      getAll(): Promise<Ledgers[]> {
         return this.ledgerRepository.find();
       }
 }

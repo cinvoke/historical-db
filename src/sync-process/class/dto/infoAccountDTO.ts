@@ -1,10 +1,7 @@
-export class AccountDTO {
-    account: string;
+export class InfoAccountDTO​​ {
     sequence: number;
-    balances: any;
-    ledgerHash: string;
+    cscBalance: string;
     ownerCount: number;
     previousAffectingTransactionID: string;
     previousAffectingTransactionLedgerVersion: number;
-    previousInitiatedTransactionID: string;
 }

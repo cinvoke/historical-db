@@ -1,8 +1,8 @@
 import { Entity, Unique, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity()
-@Unique(['account'])
-export class Accounts {
+@Unique(['account', 'ledgerHash'])
+export class AccountVersions {
 
     @Column('varchar')
     @PrimaryColumn()
@@ -11,7 +11,7 @@ export class Accounts {
     @Column('integer', {nullable : true})
     sequence: number;
 
-    @Column('integer', {nullable : true})
+    @PrimaryColumn('integer')
     ledgerVersion: number;
 
     @Column('json', { nullable: true })

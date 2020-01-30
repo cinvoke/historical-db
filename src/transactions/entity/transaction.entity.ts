@@ -2,7 +2,7 @@ import { Entity, Column, Unique, CreateDateColumn, PrimaryColumn } from 'typeorm
 
 @Entity()
 @Unique(['id'])
-export class Transaction {
+export class Transactions {
 
     @Column('varchar', {nullable : true})
     ledgerHash: string;

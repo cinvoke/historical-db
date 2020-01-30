@@ -1,13 +1,14 @@
-import { Ledger} from './../../ledgers/entity/ledger.entity';
+import { Ledgers} from './../../ledgers/entity/ledger.entity';
 import { getRepository } from 'typeorm';
 import { CasinocoinAPI } from '@casinocoin/libjs';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 import * as config from 'yaml-config';
+import { SyncTransaction } from './syncTransactions';
 const settings = config.readConfig('config.yml');
 
 export class SyncLedger {
 
-    private LedgerRepository = getRepository(Ledger);
+    private LedgerRepository = getRepository(Ledgers);
     private actualLeger;
     private cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
 
@@ -35,23 +36,23 @@ export class SyncLedger {
 
     private initSync( initLedgerVersion: number, LastLegerVersion: number) {
         let iterator: number = initLedgerVersion;
-        console.log('initLedgerVersion', initLedgerVersion, 'LastLegerVersion', LastLegerVersion);
-        // const syncTx = new SyncTransaction(initLedgerVersion, LastLegerVersion);
+        // tslint:disable-next-line:no-unused-expression ---------------------------------------------------------
+        new SyncTransaction(initLedgerVersion, LastLegerVersion); // SYNCHRONIZE TRANSACTIONS
+        // -------------------------------------------------------------------------------------------------------
         const ledgerVersionNotFound: number[] = [];
         this.cscApi.connect().then(async () => {
             while (iterator < LastLegerVersion) {
+                // console.log('iterator', iterator, 'LastLegerVersion', LastLegerVersion);
                 try {
                     const LedgerFinder: LedgerDto = await this.cscApi.getLedger({
                         ledgerVersion: iterator, includeTransactions: true, includeAllData: true, includeState: true,
                     });
                     const transactionCount = LedgerFinder.transactions ? LedgerFinder.transactions.length : 0;
-
                     if (LedgerFinder) { await this.savedLedger({ status: 'OK', ledgerVersion: iterator, transactionCount, ...LedgerFinder }); }
-
                     iterator++;
                 } catch (error) {
                     ledgerVersionNotFound.push(iterator);
-                    console.log(error.message + ' Nº:' + iterator);
+                    console.log('Ledger not found Nº:' + iterator + error.message);
                     await this.savedLedger({ status: 'Missing', ledgerVersion: iterator });
                     iterator++;
                 }
@@ -72,6 +73,7 @@ export class SyncLedger {
             return sequenceSource.max;
         } catch (err) {
             console.log('Error get lastLedgerVersion on DataBase');
+            return null;
         }
     }
 
