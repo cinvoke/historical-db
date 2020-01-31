@@ -10,7 +10,7 @@ export class Transactions {
     @Column('integer', {nullable : true})
     ledgerVersion: number;
 
-    @Column('date', {nullable : true})
+    @Column('timestamp', {nullable : true})
     ledgerTimestamp: Date;
 
     @Column('varchar', {nullable : true})

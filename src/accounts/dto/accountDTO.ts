@@ -4,6 +4,7 @@ export class AccountDTO {
     balances: any;
     ledgerHash: string;
     ownerCount: number;
+    ledgerTimestamp: Date;
     previousAffectingTransactionID: string;
     previousAffectingTransactionLedgerVersion: number;
     previousInitiatedTransactionID: string;

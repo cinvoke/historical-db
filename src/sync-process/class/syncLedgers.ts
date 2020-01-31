@@ -1,9 +1,9 @@
-import { Ledgers} from './../../ledgers/entity/ledger.entity';
+import { Ledgers} from '../../ledgers/entity/ledger.entity';
 import { getRepository } from 'typeorm';
 import { CasinocoinAPI } from '@casinocoin/libjs';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 import * as config from 'yaml-config';
-import { SyncTransaction } from './syncTransactions';
+import { SyncTransactions } from './syncTransactions';
 const settings = config.readConfig('config.yml');
 
 export class SyncLedger {
@@ -21,7 +21,7 @@ export class SyncLedger {
         try {
             // Get Last Ledger From DataBase
             const LastLedgerDB = await this.getLastLedger();
-            console.log('LastLedgerDB', LastLedgerDB, 'actualLegerCSC', this.actualLeger);
+            // console.log('LastLedgerDB', LastLedgerDB, 'actualLegerCSC', this.actualLeger);
 
             // compare Last Ledger with leger actually and init Sync in Database
             if (!LastLedgerDB) { this.initSync(1, this.actualLeger); }
@@ -36,9 +36,6 @@ export class SyncLedger {
 
     private initSync( initLedgerVersion: number, LastLegerVersion: number) {
         let iterator: number = initLedgerVersion;
-        // tslint:disable-next-line:no-unused-expression ---------------------------------------------------------
-        new SyncTransaction(initLedgerVersion, LastLegerVersion); // SYNCHRONIZE TRANSACTIONS
-        // -------------------------------------------------------------------------------------------------------
         const ledgerVersionNotFound: number[] = [];
         this.cscApi.connect().then(async () => {
             while (iterator < LastLegerVersion) {

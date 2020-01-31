@@ -12,6 +12,9 @@ export const paymentTransaction = async (transaction: TransactionModifiedDTO, cs
     const ledger = transaction[0].ledgerVersion;
     const id = transaction[0].id;
     const ledgerHash = transaction[0].ledgerHash;
+    const ledgerTimestamp = transaction[0].ledgerTimestamp;
+    const parent = transaction[0].specification.source.address;
+
     let item: BalanceDto;
     for (item of transaction[0].outcome.balanceChanges) {
         console.log(ledger);
@@ -26,7 +29,7 @@ export const paymentTransaction = async (transaction: TransactionModifiedDTO, cs
             // console.log(`getBalances: ${item.account}`, getBalancesAccount);
 
             if (accountFindDB) {
-                if ( ledger > accountFindDB.ledgerVersion) {
+                if (ledger > accountFindDB.ledgerVersion) {
                     accountFindDB.balances = getBalancesLastLedger;
                     accountFindDB.ledgerHash = ledgerHash;
                     accountFindDB.sequence = getInfoLastLedger.sequence;
@@ -35,6 +38,8 @@ export const paymentTransaction = async (transaction: TransactionModifiedDTO, cs
                     accountFindDB.previousAffectingTransactionID = getInfoLastLedger.previousAffectingTransactionID;
                     accountFindDB.previousAffectingTransactionLedgerVersion = getInfoLastLedger.previousAffectingTransactionLedgerVersion;
                     accountFindDB.previousInitiatedTransactionID = id;
+                    accountFindDB.ledgerTimestamp = ledgerTimestamp;
+                    // update account
                     await AccountRepository.save(accountFindDB);
                 }
             } else {
@@ -48,7 +53,9 @@ export const paymentTransaction = async (transaction: TransactionModifiedDTO, cs
                 newAccount.previousAffectingTransactionID = getInfoLastLedger.previousAffectingTransactionID;
                 newAccount.previousAffectingTransactionLedgerVersion = getInfoLastLedger.previousAffectingTransactionLedgerVersion;
                 newAccount.previousInitiatedTransactionID = id;
-
+                newAccount.ledgerTimestamp = ledgerTimestamp;
+                newAccount.parent = parent;
+                // insert new account
                 await AccountRepository.insert(newAccount);
             }
 
@@ -62,6 +69,8 @@ export const paymentTransaction = async (transaction: TransactionModifiedDTO, cs
             newAccountVersion.previousAffectingTransactionLedgerVersion = getInfoAccount.previousAffectingTransactionLedgerVersion;
             newAccountVersion.previousInitiatedTransactionID = id;
             newAccountVersion.sequence = getInfoAccount.sequence;
+            newAccountVersion.ledgerTimestamp = ledgerTimestamp;
+            // insert new accountVersion
             await AccountVersionRepository.insert(newAccountVersion);
 
         } catch (error) {

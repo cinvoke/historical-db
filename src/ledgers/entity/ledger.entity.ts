@@ -8,7 +8,7 @@ export class Ledgers {
     @PrimaryColumn()
     ledgerVersion: number;
 
-    @Column('varchar')
+    @Column('varchar', {nullable : true})
     status: string;
 
     @Column('date', {nullable : true})

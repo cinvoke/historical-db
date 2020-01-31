@@ -2,6 +2,7 @@ export class TransactionDTO {
     type: string;
     address: string;
     sequence: number;
+    ledgerTimestamp: Date;
     id: string;
     specification: {
         source: {

@@ -11,24 +11,40 @@ import { CasinocoinAPI } from '@casinocoin/libjs';
 import * as config from 'yaml-config';
 import { TransactionModifiedDTO } from '../../transactions/dto/transactionModifiedDTO';
 import { paymentTransaction } from './transactions_types/paymet';
+import { Accounts } from '../../accounts/entity/account.entity';
 const settings = config.readConfig('config.yml');
-export class SyncTransaction {
+export class SyncTransactions {
 
     private cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
-    private LastLegerVersion;
-    private initLedgerVersion;
-    private TransactionRepository = getRepository(Transactions);
+    private TransactionsRepository = getRepository(Transactions);
+    private AccountsRepository = getRepository(Accounts);
 
-    constructor(initLedgerVersion: number, LastLegerVersion: number) {
-        this.initLedgerVersion = initLedgerVersion;
-        this.LastLegerVersion = LastLegerVersion;
-        this.initSyncTransactions(this.initLedgerVersion, this.LastLegerVersion );
+    constructor(lastLedgerVersionCSC: number) {
+        this.initSyncTransactions(lastLedgerVersionCSC);
     }
 
-    private async initSyncTransactions(initLedgerVersion, LastLegerVersion) {
-        let iterator = initLedgerVersion;
+    private async initSyncTransactions(lastLedgerVersionCSC) {
+        try {
+            // Get Last Ledger From DataBase
+            const lastLegerVersionAccounts = await this.getLastLedgerAccounts();
+            // compare Last Ledger with leger actually and init Sync in Database
+            if (!lastLegerVersionAccounts) { this.initSync(1, lastLedgerVersionCSC); }
+
+            if (lastLegerVersionAccounts >= 1 && lastLegerVersionAccounts < lastLedgerVersionCSC) {
+                this.initSync(lastLegerVersionAccounts + 1, lastLedgerVersionCSC);
+            }
+
+            if (lastLegerVersionAccounts > lastLedgerVersionCSC) { return console.log('Database Is Actualized'); }
+        } catch (error) {
+            return console.log('Error initSyncLedger:', error.message);
+        }
+    }
+
+    private async initSync(lastLegerVersionAccounts, lastLedgerVersionCSC ) {
+        let iterator = lastLegerVersionAccounts;
+        console.log('lastLegerVersionAccounts', iterator, 'lastLedgerVersionCSC', lastLedgerVersionCSC);
         this.cscApi.connect().then(async () => {
-            while (iterator < LastLegerVersion) {
+            while (iterator < lastLedgerVersionCSC) {
                 try {
                     const LedgerFinder: LedgerDto = await this.cscApi.getLedger({
                         ledgerVersion: iterator, includeTransactions: true, includeAllData: true, includeState: true,
@@ -42,20 +58,33 @@ export class SyncTransaction {
                             if (transaction.type === 'payment') {
                                // modified ledger Transactions for saved in DB
                                 const transactionModified: TransactionModifiedDTO = this.transactionsModified(LedgerFinder);
+                                console.log(transactionModified);
                                 // sycn acc
                                 await paymentTransaction(transactionModified, this.cscApi);
                                 // Insert the transaction
-                                await this.TransactionRepository.insert(transactionModified);
+                                await this.TransactionsRepository.insert(transactionModified);
                             }
-                            if (transaction.type === 'SetCRNRound') { crnTransaction(transaction); }
-                            if (transaction.type === 'KYCSet') { kycTransaction(transaction); }
-                            if (transaction.type === 'TrustSet') { trustTransaction(transaction); }
-                            if (transaction.type === 'AccountSet') { setAccountTransaction(transaction); }
+                            if (transaction.type === 'SetCRNRound') {
+                                console.log('transaaction type SetCRNRound ledger:' + iterator);
+                                crnTransaction(transaction);
+                            }
+                            if (transaction.type === 'KYCSet') {
+                                console.log('transaaction type KYCSet ledger:' + iterator);
+                                kycTransaction(transaction);
+                            }
+                            if (transaction.type === 'TrustSet') {
+                                console.log('transaaction type TrustSet ledger:' + iterator);
+                                trustTransaction(transaction);
+                            }
+                            if (transaction.type === 'AccountSet') {
+                                console.log('transaaction type AccountSet ledger:' + iterator);
+                                setAccountTransaction(transaction);
+                            }
                         }
                     }
                     iterator++;
                 } catch (error) {
-                    console.log('Error in init', error.message + ' Nº:' + iterator);
+                    console.log('Error in initSync', error.message + ' Nº:' + iterator);
                     iterator++;
                 }
             }
@@ -115,6 +144,20 @@ export class SyncTransaction {
             }
         });
         return transactionsCheck;
+    }
+
+    // get last ledgerVersion from database
+    private getLastLedgerAccounts = async () => {
+        try {
+            const sequenceSource: any = await this.AccountsRepository
+                .createQueryBuilder('A')
+                .select('MAX(A.ledgerVersion)', 'max')
+                .getRawOne();
+            return sequenceSource.max;
+        } catch (err) {
+            console.log('Error get lastLedgerVersion on DataBase');
+            return null;
+        }
     }
 
 }
