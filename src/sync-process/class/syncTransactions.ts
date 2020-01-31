@@ -10,7 +10,7 @@ import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 import { CasinocoinAPI } from '@casinocoin/libjs';
 import * as config from 'yaml-config';
 import { TransactionModifiedDTO } from '../../transactions/dto/transactionModifiedDTO';
-import { paymentTransaction } from './transactions_types/paymet';
+import { paymentTransaction } from './transactions_types/payment';
 import { Accounts } from '../../accounts/entity/account.entity';
 const settings = config.readConfig('config.yml');
 export class SyncTransactions {
@@ -58,33 +58,43 @@ export class SyncTransactions {
                             if (transaction.type === 'payment') {
                                // modified ledger Transactions for saved in DB
                                 const transactionModified: TransactionModifiedDTO = this.transactionsModified(LedgerFinder);
-                                console.log(transactionModified);
-                                // sycn acc
+                                // sync accounts
                                 await paymentTransaction(transactionModified, this.cscApi);
                                 // Insert the transaction
                                 await this.TransactionsRepository.insert(transactionModified);
                             }
                             if (transaction.type === 'SetCRNRound') {
-                                console.log('transaaction type SetCRNRound ledger:' + iterator);
+                                console.log('transaction type SetCRNRound ledger:' + iterator);
                                 crnTransaction(transaction);
                             }
                             if (transaction.type === 'KYCSet') {
-                                console.log('transaaction type KYCSet ledger:' + iterator);
+                                console.log('transaction type KYCSet ledger:' + iterator);
                                 kycTransaction(transaction);
                             }
                             if (transaction.type === 'TrustSet') {
-                                console.log('transaaction type TrustSet ledger:' + iterator);
+                                console.log('transaction type TrustSet ledger:' + iterator);
                                 trustTransaction(transaction);
                             }
                             if (transaction.type === 'AccountSet') {
-                                console.log('transaaction type AccountSet ledger:' + iterator);
+                                console.log('transaction type AccountSet ledger:' + iterator);
                                 setAccountTransaction(transaction);
+                            }
+
+                            if (transaction.type === 'feeUpdate') {
+                                console.log('transaction type AccountSet ledger:' + iterator);
+                                setAccountTransaction(transaction);
+                                await this.TransactionsRepository.insert({
+                                    ...transaction,
+                                    ledgerHash: LedgerFinder.ledgerHash,
+                                    ledgerVersion: LedgerFinder.ledgerVersion,
+                                    ledgerTimestamp: LedgerFinder.closeTime,
+                                });
                             }
                         }
                     }
                     iterator++;
                 } catch (error) {
-                    console.log('Error in initSync', error.message + ' Nº:' + iterator);
+                    console.log('Error in initSync', error.message + ' Nº:' + iterator, error);
                     iterator++;
                 }
             }
@@ -96,51 +106,55 @@ export class SyncTransactions {
 
     private transactionsModified(LedgerFinder: LedgerDto): any {
 
-        const transactionsCheck = LedgerFinder.transactions.map((element: TransactionDTO) => {
-            const balanceChanges: Array<{ account, value, currency }> = [];
-            const countOutcome = Object.keys(element.outcome.balanceChanges).length;
-            const sourceAccount = element.specification.source.address;
-            const destinationAccount = element.specification.destination.address;
+        const transactionSaned = LedgerFinder.transactions.filter( (item: TransactionDTO) => item.type === 'payment');
+        const transactionsCheck: TransactionDTO[] = transactionSaned.map((element: TransactionDTO) => {
+            if (element.type === 'payment') {
+                const balanceChanges: Array<{ account, value, currency }> = [];
+                const countOutcome = Object.keys(element.outcome.balanceChanges).length;
+                const sourceAccount = element.specification.source.address;
+                const destinationAccount = element.specification.destination.address;
 
-            if (countOutcome >= 3) {
-                // Filter accounts for process your balances
-                const filterAccount =  account => account === sourceAccount || account === destinationAccount;
-                const balanceCh = Object.getOwnPropertyNames(element.outcome.balanceChanges)
-                                    .filter( filterAccount)
-                                    .map((account) => {
-                                        return element.outcome.balanceChanges[account].forEach((item) => {
-                                            balanceChanges.push({
-                                                account,
-                                                value: item.value,
-                                                currency: item.currency,
-                                            });
-                                        });
-                                    });
+                if (countOutcome >= 3) {
+                    // Filter accounts for process your balances
+                    const filterAccount = account => account === sourceAccount || account === destinationAccount;
+                    const balanceCh = Object.getOwnPropertyNames(element.outcome.balanceChanges)
+                        .filter(filterAccount)
+                        .map((account) => {
+                            return element.outcome.balanceChanges[account].forEach((item) => {
+                                balanceChanges.push({
+                                    account,
+                                    value: item.value,
+                                    currency: item.currency,
+                                });
+                            });
+                        });
 
-                element.outcome.balanceChanges = balanceChanges;
-                element.outcome.orderbookChanges = '';
-                return {
-                    ledgerHash: LedgerFinder.ledgerHash,
-                    ledgerVersion: LedgerFinder.ledgerVersion,
-                    ledgerTimestamp: LedgerFinder.closeTime,
-                    ...element,
-                };
-            } else {
-                Object.getOwnPropertyNames(element.outcome.balanceChanges).forEach((val, idx, array) => {
-                    balanceChanges.push({
-                        account: val,
-                        currency: element.outcome.balanceChanges[val][0].currency,
-                        value: element.outcome.balanceChanges[val][0].value,
+                    element.outcome.balanceChanges = balanceChanges;
+                    element.outcome.orderbookChanges = '';
+                    return {
+                        ledgerHash: LedgerFinder.ledgerHash,
+                        ledgerVersion: LedgerFinder.ledgerVersion,
+                        ledgerTimestamp: LedgerFinder.closeTime,
+                        ...element,
+                    };
+                } else {
+                    Object.getOwnPropertyNames(element.outcome.balanceChanges).forEach((val, idx, array) => {
+                        balanceChanges.push({
+                            account: val,
+                            currency: element.outcome.balanceChanges[val][0].currency,
+                            value: element.outcome.balanceChanges[val][0].value,
+                        });
                     });
-                });
-                element.outcome.balanceChanges = balanceChanges;
-                element.outcome.orderbookChanges = '';
-                return {
-                    ledgerHash: LedgerFinder.ledgerHash,
-                    ledgerVersion: LedgerFinder.ledgerVersion,
-                    ledgerTimestamp: LedgerFinder.closeTime,
-                    ...element,
-                };
+                    element.outcome.balanceChanges = balanceChanges;
+                    element.outcome.orderbookChanges = '';
+                    return {
+                        ledgerHash: LedgerFinder.ledgerHash,
+                        ledgerVersion: LedgerFinder.ledgerVersion,
+                        ledgerTimestamp: LedgerFinder.closeTime,
+                        ...element,
+                    };
+                }
+
             }
         });
         return transactionsCheck;

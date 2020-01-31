@@ -12,7 +12,7 @@ import { Transactions } from './transactions/entity/transaction.entity';
 import { Ledgers } from './ledgers/entity/ledger.entity';
 import { AccVersionModule } from './account-version/acc-version.module';
 import * as config from 'yaml-config';
-import { AccountVersions } from './account-version/entity/accountVersion.entiity';
+import { AccountVersions } from './account-version/entity/accountVersion.entity';
 
 // load settings
 const settings = config.readConfig('config.yml');

@@ -1,97 +1,61 @@
-// import { getRepository } from 'typeorm';
-// import { Accounts } from '../../accounts/entity/account.entity';
-// import { TransactionModifiedDTO } from '../../transactions/dto/transactionModifiedDTO';
-// import { BalanceDto } from '../../transactions/dto/balanceDTO';
+import { getRepository } from 'typeorm';
+import { Accounts } from '../../accounts/entity/account.entity';
+import { AccountVersions } from '../../account-version/entity/accountVersion.entity';
+import { InfoAccountDTO } from './dto/infoAccountDTO';
 
-// export class SyncAccount {
+export class SyncAccount {
 
-//     private AccountRepository = getRepository(Accounts);
+    // tslint:disable-next-line:max-line-length
+    public async updateAccount(accountFindDB: Accounts, getBalancesLastLedger, getInfoLastLedger: InfoAccountDTO, elements: { ledgerHash, ledger, id, ledgerTimestamp, parent }) {
+        const accountRepository = getRepository(Accounts);
+        accountFindDB.balances = getBalancesLastLedger;
+        accountFindDB.ledgerHash = elements.ledgerHash;
+        accountFindDB.sequence = getInfoLastLedger.sequence;
+        accountFindDB.ledgerVersion = elements.ledger;
+        accountFindDB.ownerCount = getInfoLastLedger.ownerCount;
+        accountFindDB.previousAffectingTransactionID = getInfoLastLedger.previousAffectingTransactionID;
+        accountFindDB.previousAffectingTransactionLedgerVersion = getInfoLastLedger.previousAffectingTransactionLedgerVersion;
+        accountFindDB.previousInitiatedTransactionID = elements.id;
+        accountFindDB.ledgerTimestamp = elements.ledgerTimestamp;
+        // update account
+        await accountRepository.save(accountFindDB);
+    }
 
-//     constructor(transaction: TransactionModifiedDTO , item: BalanceDto) {
-//         this.initSyncAccount(transaction, item);
-//     }
+    // tslint:disable-next-line:max-line-length
+    public async insertAccount(account, getBalancesLastLedger,  getInfoLastLedger: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent}) {
+        const accountRepository = getRepository(Accounts);
+        const newAccount = new Accounts();
+        newAccount.account = account;
+        newAccount.balances = getBalancesLastLedger;
+        newAccount.sequence = getInfoLastLedger.sequence;
+        newAccount.ledgerHash = elements.ledgerHash;
+        newAccount.ledgerVersion = elements.ledger;
+        newAccount.ownerCount = getInfoLastLedger.ownerCount;
+        newAccount.previousAffectingTransactionID = getInfoLastLedger.previousAffectingTransactionID;
+        newAccount.previousAffectingTransactionLedgerVersion = getInfoLastLedger.previousAffectingTransactionLedgerVersion;
+        newAccount.previousInitiatedTransactionID = elements.id;
+        newAccount.ledgerTimestamp = elements.ledgerTimestamp;
+        newAccount.parent = elements.parent;
+        // insert new account
+        await accountRepository.insert(newAccount);
+    }
 
-//     async initSyncAccount(transaction: TransactionModifiedDTO, item: BalanceDto) {
-//         try {
-//             // count transaction
-//             const lengthBalanceChanges = transaction.outcome.balanceChanges.length;
-//             // get last balance of Account
-//             const account = await this.AccountRepository.findOne({ account: item.account });
+    // tslint:disable-next-line:max-line-length
+    public async insertNewAccountVersion(account, getBalancesAccount,  getInfoAccount: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent}) {
+        const accountVersionRepository = getRepository(AccountVersions);
+        const newAccountVersion = new AccountVersions();
+        newAccountVersion.account = account;
+        newAccountVersion.balances = getBalancesAccount;
+        newAccountVersion.ledgerHash = elements.ledgerHash;
+        newAccountVersion.ledgerVersion = elements.ledger;
+        newAccountVersion.ownerCount = getInfoAccount.ownerCount;
+        newAccountVersion.previousAffectingTransactionID = getInfoAccount.previousAffectingTransactionID;
+        newAccountVersion.previousAffectingTransactionLedgerVersion = getInfoAccount.previousAffectingTransactionLedgerVersion;
+        newAccountVersion.previousInitiatedTransactionID = elements.id;
+        newAccountVersion.sequence = getInfoAccount.sequence;
+        newAccountVersion.ledgerTimestamp = elements.ledgerTimestamp;
+        // insert new accountVersion
+        await accountVersionRepository.insert(newAccountVersion);
+    }
 
-//             if (!account) {
-//                 await this.insertNewAccount(transaction, item);
-//                 console.log('save LastBalanceAccount', account);
-//             } else {
-//                 // await this.accountsBalances(transaction, item, lengthBalanceChanges, account);
-//             }
-//         } catch (error) {
-//             console.log('Error in fr transaction: ' + error);
-//         }
-//     }
-
-//     private async insertNewAccount(transaction: TransactionModifiedDTO, item: BalanceDto) {
-//         const newAccount: Accounts = new Accounts();
-//         newAccount.account = item.account;
-//         newAccount.sequence = transaction.sequence;
-//         newAccount.balances = [{currency : item.currency, value: parseFloat(item.value) }];
-//         newAccount.ledgerHash = transaction.ledgerHash;
-//         newAccount.ownerCount = 0;
-//         newAccount.previousAffectingTransactionID = transaction.id;
-//         newAccount.previousAffectingTransactionLedgerVersion = transaction.ledgerVersion;
-//         newAccount.previousInitiatedTransactionID = '';
-
-//         await this.AccountRepository.save(newAccount);
-//     }
-
-//     // tslint:disable-next-line:max-line-length
-//     private accountsBalances = async  (transaction: TransactionModifiedDTO, item: BalanceDto, lengthBalanceChanges: number, lastBalanceAccount: Account) => {
-//         let count: number = 0;
-//         // Function for compare the account sequences
-//         const compareAccountSequence = async () => {
-//             const account = item.account;
-//             const sequenceTx = transaction.sequence;
-
-//             try {
-//                 // const sequenceAccount = await this.getSequence(account);
-//                 const sequenceAccount = lastBalanceAccount.sequence;
-//                 console.log('ActuallySequenceAccountTX:', sequenceTx, 'sequenceInPostgres :', sequenceAccount, 'account', account);
-//                 const pass: boolean = sequenceTx === sequenceAccount + 1;
-//                 const exists: boolean = sequenceTx < sequenceAccount || !sequenceAccount;
-//                 const correctly: boolean = (sequenceTx === sequenceAccount && lengthBalanceChanges > 2) || pass;
-//                 const wait: boolean = sequenceTx >= sequenceAccount + 2 && sequenceTx > sequenceAccount;
-
-//                 if (correctly) {
-//                     // console.log('lastBalanceAccount', lastBalanceAccount);
-//                     lastBalanceAccount.sequence = sequenceTx;
-//                     const index = lastBalanceAccount.balances.findIndex(balance => balance.currency === item.currency);
-//                     // console.log('index', index);
-//                     if (index === -1) {
-//                         lastBalanceAccount.balances.push({ currency: item.currency, value: parseFloat(item.value) });
-//                     } else {
-//                         lastBalanceAccount.balances[index].value = lastBalanceAccount.balances[index].value + parseFloat(item.value);
-//                     }
-//                     await this.AccountRepository.save(lastBalanceAccount);
-//                     console.log('save Balance Account: ', lastBalanceAccount.account);
-//                     // console.log('save LastBalanceAccount', lastBalanceAccount.account);
-//                     // console.log('lastBalanceAccount: ===', lastBalanceAccount);
-//                 }
-
-//                 if (exists) {
-//                     console.log('exists tx for SourceAccount');
-//                 }
-
-//                 if (wait) {
-//                     count++;
-//                     if (count === 50) { return; }
-//                     setTimeout(compareAccountSequence, 3000);
-//                     console.log('Waiting Change source');
-//                 }
-
-//             } catch (error) {
-//                 return console.log('Error compare Sequence: ' + error);
-//             }
-//         };
-//         await compareAccountSequence();
-//     }
-
-// }
+}

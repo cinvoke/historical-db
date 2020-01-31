@@ -11,7 +11,7 @@ export class Ledgers {
     @Column('varchar', {nullable : true})
     status: string;
 
-    @Column('date', {nullable : true})
+    @Column('timestamp', {nullable : true})
     ledgerTimestamp: Date;
 
     @Column('integer', {nullable : true})
@@ -20,7 +20,7 @@ export class Ledgers {
     @Column('varchar', {nullable : true})
     stateHash: string;
 
-    @Column('varchar', {nullable : true})
+    @Column('timestamp', {nullable : true})
     closeTime: string;
 
     @Column('integer', {nullable : true})
@@ -35,7 +35,7 @@ export class Ledgers {
     @Column('varchar', {nullable : true})
     parentLedgerHash: string;
 
-    @Column('varchar', {nullable : true})
+    @Column('timestamp', {nullable : true})
     parentCloseTime: string;
 
     @Column('varchar', {nullable : true})
