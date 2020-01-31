@@ -56,8 +56,12 @@ export class SyncTransactions {
                             console.log(`---------------------ledger-${iterator}------------------------` );
                             // send tx modified for add accounts
                             if (transaction.type === 'payment') {
-                               // modified ledger Transactions for saved in DB
-                                const transactionModified: TransactionModifiedDTO = this.transactionsModified(LedgerFinder);
+                                const transactionModified = {
+                                    ledgerHash: LedgerFinder.ledgerHash,
+                                    ledgerVersion: LedgerFinder.ledgerVersion,
+                                    ledgerTimestamp: LedgerFinder.closeTime,
+                                    ...transaction,
+                                };
                                 // sync accounts
                                 await paymentTransaction(transactionModified, this.cscApi);
                                 // Insert the transaction
@@ -102,62 +106,6 @@ export class SyncTransactions {
         }).catch((err) => {
             console.log('Error in connected in CasinoCoin Server' + err);
         });
-    }
-
-    private transactionsModified(LedgerFinder: LedgerDto): any {
-
-        const transactionSaned = LedgerFinder.transactions.filter( (item: TransactionDTO) => item.type === 'payment');
-        const transactionsCheck: TransactionDTO[] = transactionSaned.map((element: TransactionDTO) => {
-            if (element.type === 'payment') {
-                const balanceChanges: Array<{ account, value, currency }> = [];
-                const countOutcome = Object.keys(element.outcome.balanceChanges).length;
-                const sourceAccount = element.specification.source.address;
-                const destinationAccount = element.specification.destination.address;
-
-                if (countOutcome >= 3) {
-                    // Filter accounts for process your balances
-                    const filterAccount = account => account === sourceAccount || account === destinationAccount;
-                    const balanceCh = Object.getOwnPropertyNames(element.outcome.balanceChanges)
-                        .filter(filterAccount)
-                        .map((account) => {
-                            return element.outcome.balanceChanges[account].forEach((item) => {
-                                balanceChanges.push({
-                                    account,
-                                    value: item.value,
-                                    currency: item.currency,
-                                });
-                            });
-                        });
-
-                    element.outcome.balanceChanges = balanceChanges;
-                    element.outcome.orderbookChanges = '';
-                    return {
-                        ledgerHash: LedgerFinder.ledgerHash,
-                        ledgerVersion: LedgerFinder.ledgerVersion,
-                        ledgerTimestamp: LedgerFinder.closeTime,
-                        ...element,
-                    };
-                } else {
-                    Object.getOwnPropertyNames(element.outcome.balanceChanges).forEach((val, idx, array) => {
-                        balanceChanges.push({
-                            account: val,
-                            currency: element.outcome.balanceChanges[val][0].currency,
-                            value: element.outcome.balanceChanges[val][0].value,
-                        });
-                    });
-                    element.outcome.balanceChanges = balanceChanges;
-                    element.outcome.orderbookChanges = '';
-                    return {
-                        ledgerHash: LedgerFinder.ledgerHash,
-                        ledgerVersion: LedgerFinder.ledgerVersion,
-                        ledgerTimestamp: LedgerFinder.closeTime,
-                        ...element,
-                    };
-                }
-
-            }
-        });
-        return transactionsCheck;
     }
 
     // get last ledgerVersion from database

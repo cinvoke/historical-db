@@ -26,7 +26,7 @@ export class Transactions {
     @PrimaryColumn()
     id: string;
 
-    @Column('simple-json', {nullable : true})
+    @Column('json', {nullable : true})
     specification: {
         source: {
             address: string,
@@ -46,11 +46,11 @@ export class Transactions {
         };
     };
 
-    @Column('simple-json', {nullable : true})
+    @Column('json', {nullable : true})
     outcome: {
         result: string,
         fee: string,
-        balanceChanges: Array<{ account: string, value: string, currency: string; }>,
+        balanceChanges: any[],
         orderbookChanges: string,
         ledgerVersion: number,
         indexInLedger: number,

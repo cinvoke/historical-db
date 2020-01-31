@@ -17,15 +17,8 @@ export class AccountVersions {
     @Column('timestamp', {nullable : true})
     ledgerTimestamp: Date;
 
-    @Column('varchar', { nullable: true })
-    parent: string;
-
     @Column('json', { nullable: true })
-    kyc: Array<{
-        description: string,
-        date: Date,
-        verification: any[],
-    }>;
+    kyc: Array<{ description: string, date: Date, verification: any[] }>;
 
     @Column('json', { nullable: true })
     balances: any[];

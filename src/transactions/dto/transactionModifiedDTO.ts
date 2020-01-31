@@ -28,7 +28,7 @@ export class TransactionModifiedDTO {
     outcome: {
         result: string,
         fee: string,
-        balanceChanges: Array<{ account: string, value: string, currency: string; }>,
+        balanceChanges: any[],
         orderbookChanges: string,
         ledgerVersion: number,
         indexInLedger: number,

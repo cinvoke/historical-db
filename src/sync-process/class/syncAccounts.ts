@@ -19,6 +19,7 @@ export class SyncAccount {
         accountFindDB.ledgerTimestamp = elements.ledgerTimestamp;
         // update account
         await accountRepository.save(accountFindDB);
+        console.log(`update account ${accountFindDB.account}`);
     }
 
     // tslint:disable-next-line:max-line-length
@@ -38,6 +39,7 @@ export class SyncAccount {
         newAccount.parent = elements.parent;
         // insert new account
         await accountRepository.insert(newAccount);
+        console.log(`insert account ${account}`);
     }
 
     // tslint:disable-next-line:max-line-length
@@ -56,6 +58,7 @@ export class SyncAccount {
         newAccountVersion.ledgerTimestamp = elements.ledgerTimestamp;
         // insert new accountVersion
         await accountVersionRepository.insert(newAccountVersion);
+        console.log(`insert VersionAccount ${account}`);
     }
 
 }

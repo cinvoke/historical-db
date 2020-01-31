@@ -9,27 +9,29 @@ import { AccountVersions } from '../../../account-version/entity/accountVersion.
 const syncAccount = new SyncAccount();
 
 export const paymentTransaction = async (transaction: TransactionModifiedDTO, cscAPI) => {
-    const AccountRepository = getRepository(Accounts);
-    const ledger = transaction[0].ledgerVersion;
-    const elements = {
-        ledger: transaction[0].ledgerVersion,
-        id: transaction[0].id,
-        ledgerHash: transaction[0].ledgerHash,
-        ledgerTimestamp: transaction[0].ledgerTimestamp,
-        parent: transaction[0].specification.source.address,
-    };
-    let item: BalanceDto;
-    for (item of transaction[0].outcome.balanceChanges) {
-        console.log(ledger);
-        try {
-            const accountFindDB = await AccountRepository.findOne({ account: item.account });
-            const getBalancesLastLedger = await cscAPI.getBalances(item.account);
-            const getInfoLastLedger: InfoAccountDTO = await cscAPI.getAccountInfo(item.account);
 
-            const getInfoAccount: InfoAccountDTO = await cscAPI.getAccountInfo(item.account, { ledgerVersion : ledger });
-            // console.log(`getInfo: ${item.account}`, getInfoAccount);
-            const getBalancesAccount = await cscAPI.getBalances(item.account, { ledgerVersion: ledger });
-            // console.log(`getBalances: ${item.account}`, getBalancesAccount);
+    const AccountRepository = getRepository(Accounts);
+
+    const ledger = transaction.ledgerVersion;
+    const elements = {
+        ledger: transaction.ledgerVersion,
+        id: transaction.id,
+        ledgerHash: transaction.ledgerHash,
+        ledgerTimestamp: transaction.ledgerTimestamp,
+        parent: transaction.specification.source.address,
+    };
+
+    // tslint:disable-next-line:forin
+    for (const account in transaction.outcome.balanceChanges) {
+        try {
+            const accountFindDB = await AccountRepository.findOne({ account });
+            const getBalancesLastLedger = await cscAPI.getBalances(account);
+            const getInfoLastLedger: InfoAccountDTO = await cscAPI.getAccountInfo(account);
+
+            const getInfoAccount: InfoAccountDTO = await cscAPI.getAccountInfo(account, { ledgerVersion : ledger });
+            // console.log(`getInfo: ${account}`, getInfoAccount);
+            const getBalancesAccount = await cscAPI.getBalances(account, { ledgerVersion: ledger });
+            // console.log(`getBalances: ${account}`, getBalancesAccount);
 
             if (accountFindDB) {
                 if (ledger > accountFindDB.ledgerVersion) {
@@ -37,12 +39,12 @@ export const paymentTransaction = async (transaction: TransactionModifiedDTO, cs
                     await syncAccount.updateAccount(accountFindDB, getBalancesLastLedger, getInfoLastLedger, elements);
                 }
             } else {
-                await syncAccount.insertAccount(item.account, getBalancesLastLedger, getInfoLastLedger, elements);
+                await syncAccount.insertAccount(account, getBalancesLastLedger, getInfoLastLedger, elements);
             }
-            await syncAccount.insertNewAccountVersion(item.account, getBalancesAccount, getInfoAccount, elements);
+            await syncAccount.insertNewAccountVersion(account, getBalancesAccount, getInfoAccount, elements);
 
         } catch (error) {
-            console.log(`Error get info or balance account: ${item.account}`);
+            console.log(`Error get info or balance account: ${account}`);
         }
     }
 };

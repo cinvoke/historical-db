@@ -81,6 +81,6 @@ export class SyncLedger {
         delete ledger.rawState;
         ledger.ledgerTimestamp = ledger.closeTime;
         await this.LedgerRepository.save(ledger);
-        console.log('insert Ledger' + ledger.ledgerVersion);
+        // console.log('insert Ledger' + ledger.ledgerVersion);
     }
 }
