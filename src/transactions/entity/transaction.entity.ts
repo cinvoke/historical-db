@@ -28,7 +28,7 @@ export class Transactions {
 
     @Column('json', {nullable : true})
     specification: {
-        source: {
+        source?: {
             address: string,
             maxAmount: {
                 currency: string,
@@ -36,7 +36,7 @@ export class Transactions {
                 counterparty: string;
             };
         },
-        destination: {
+        destination?: {
             address: string,
             amount: {
                 currency: string,
@@ -44,6 +44,13 @@ export class Transactions {
                 counterparty: string;
             };
         };
+        FeesDistributed?: string
+        CRNs?: [],
+        LedgerSequence?: number,
+        CRNTXHistory?: any[]
+        limit?: string,
+        currency?: string,
+        counterparty?: string,
     };
 
     @Column('json', {nullable : true})

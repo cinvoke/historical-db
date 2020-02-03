@@ -40,22 +40,27 @@ export class SyncTransactions {
         }
     }
 
-    private async initSync(lastLegerVersionAccounts, lastLedgerVersionCSC ) {
+    private async initSync(lastLegerVersionAccounts, lastLedgerVersionCSC) {
+        // this.syncService.subjectSync.next(true);
         let iterator = lastLegerVersionAccounts;
         console.log('lastLegerVersionAccounts', iterator, 'lastLedgerVersionCSC', lastLedgerVersionCSC);
         this.cscApi.connect().then(async () => {
-            while (iterator < lastLedgerVersionCSC) {
+            while (iterator <= lastLedgerVersionCSC) {
                 try {
                     const LedgerFinder: LedgerDto = await this.cscApi.getLedger({
-                        ledgerVersion: iterator, includeTransactions: true, includeAllData: true, includeState: true,
+                        ledgerVersion: iterator,
+                        includeTransactions: true,
+                        includeAllData: true,
+                        includeState: true,
                     });
+
                     if (LedgerFinder.transactions) {
                         // loop for every transactionCheck
                         let transaction: any;
                         for await (transaction of LedgerFinder.transactions) {
                             console.log(`---------------------ledger-${iterator}------------------------` );
                             // send tx modified for add accounts
-                            if (transaction.type === 'payment') {
+                            if (transaction.type === 'payment') { // OK
                                 const transactionModified = {
                                     ledgerHash: LedgerFinder.ledgerHash,
                                     ledgerVersion: LedgerFinder.ledgerVersion,
@@ -67,24 +72,48 @@ export class SyncTransactions {
                                 // Insert the transaction
                                 await this.TransactionsRepository.insert(transactionModified);
                             }
-                            if (transaction.type === 'SetCRNRound') {
+
+                            if (transaction.type === 'setCRNRound') { //
                                 console.log('transaction type SetCRNRound ledger:' + iterator);
-                                crnTransaction(transaction);
+                                const transactionModified = {
+                                    ledgerHash: LedgerFinder.ledgerHash,
+                                    ledgerVersion: LedgerFinder.ledgerVersion,
+                                    ledgerTimestamp: LedgerFinder.closeTime,
+                                    ...transaction,
+                                };
+                                await crnTransaction(transactionModified, this.cscApi);
                             }
-                            if (transaction.type === 'KYCSet') {
+
+                            if (transaction.type === 'kycSet') { // OK
                                 console.log('transaction type KYCSet ledger:' + iterator);
-                                kycTransaction(transaction);
+                                const transactionModified = {
+                                    ledgerHash: LedgerFinder.ledgerHash,
+                                    ledgerVersion: LedgerFinder.ledgerVersion,
+                                    ledgerTimestamp: LedgerFinder.closeTime,
+                                    ...transaction,
+                                };
+                                await kycTransaction(transactionModified, this.cscApi);
+                                await this.TransactionsRepository.insert(transactionModified);
                             }
-                            if (transaction.type === 'TrustSet') {
-                                console.log('transaction type TrustSet ledger:' + iterator);
-                                trustTransaction(transaction);
+
+                            if (transaction.type === 'trustline') { // OK
+                                console.log('transaction type trustline ledger:' + iterator);
+                                const transactionModified = {
+                                    ledgerHash: LedgerFinder.ledgerHash,
+                                    ledgerVersion: LedgerFinder.ledgerVersion,
+                                    ledgerTimestamp: LedgerFinder.closeTime,
+                                    ...transaction,
+                                };
+                                await trustTransaction(transactionModified, this.cscApi);
+                                await this.TransactionsRepository.insert(transactionModified);
                             }
+
                             if (transaction.type === 'AccountSet') {
                                 console.log('transaction type AccountSet ledger:' + iterator);
                                 setAccountTransaction(transaction);
                             }
 
-                            if (transaction.type === 'feeUpdate') {
+                            if (transaction.type === 'feeUpdate') { // OK
                                 console.log('transaction type AccountSet ledger:' + iterator);
                                 setAccountTransaction(transaction);
                                 await this.TransactionsRepository.insert({
@@ -102,12 +131,12 @@ export class SyncTransactions {
                     iterator++;
                 }
             }
-
+            // this.syncService.subjectSync.next(false);
+            console.log('sync finished');
         }).catch((err) => {
             console.log('Error in connected in CasinoCoin Server' + err);
         });
     }
-
     // get last ledgerVersion from database
     private getLastLedgerAccounts = async () => {
         try {

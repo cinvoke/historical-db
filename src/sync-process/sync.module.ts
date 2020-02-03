@@ -3,7 +3,7 @@ import { SyncService } from './services/sync/sync.service';
 import { CasinocoinAPI } from '@casinocoin/libjs';
 import { SyncLedger } from './class/syncLedgers';
 import * as config from 'yaml-config';
-import { SyncTransactions } from './class/syncTransactions';
+import { SyncTransactions } from './class/syncTransaction';
 const settings = config.readConfig('config.yml');
 
 @Module({
@@ -12,7 +12,7 @@ const settings = config.readConfig('config.yml');
 export class SyncModule {
 
     constructor(private readonly syncService: SyncService) {
-        const cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServerProduction });
+        const cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
         cscApi.connect().then( async () => {
             // get the current server_info
             cscApi.getServerInfo().then(info => {

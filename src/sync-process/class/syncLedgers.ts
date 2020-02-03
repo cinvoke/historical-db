@@ -3,7 +3,6 @@ import { getRepository } from 'typeorm';
 import { CasinocoinAPI } from '@casinocoin/libjs';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 import * as config from 'yaml-config';
-import { SyncTransactions } from './syncTransactions';
 const settings = config.readConfig('config.yml');
 
 export class SyncLedger {

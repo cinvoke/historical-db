@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { LedgersModule } from './ledgers/ledgers.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AccountsModule } from './accounts/accounts.module';
-import { TransactionsModule } from './transactions/transactions.module';
+import { TransactionsModule } from './transactions/transactions';
 import { SyncModule } from './sync-process/sync.module';
 import { SyncService } from './sync-process/services/sync/sync.service';
 import { Accounts } from './accounts/entity/account.entity';
@@ -13,6 +13,7 @@ import { Ledgers } from './ledgers/entity/ledger.entity';
 import { AccVersionModule } from './account-version/acc-version.module';
 import * as config from 'yaml-config';
 import { AccountVersions } from './account-version/entity/accountVersion.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 // load settings
 const settings = config.readConfig('config.yml');
@@ -34,6 +35,7 @@ const settings = config.readConfig('config.yml');
     TransactionsModule,
     SyncModule,
     AccVersionModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService, SyncService],

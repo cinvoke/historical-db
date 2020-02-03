@@ -24,6 +24,7 @@ export class TransactionModifiedDTO {
             };
         },
         memos?: Array<{ format: string; data: string }>;
+        KYC?: Array<{ description: string, date: Date, verification: any[] }>
     };
     outcome: {
         result: string,

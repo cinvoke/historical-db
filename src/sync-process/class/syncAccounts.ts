@@ -6,7 +6,7 @@ import { InfoAccountDTO } from './dto/infoAccountDTO';
 export class SyncAccount {
 
     // tslint:disable-next-line:max-line-length
-    public async updateAccount(accountFindDB: Accounts, getBalancesLastLedger, getInfoLastLedger: InfoAccountDTO, elements: { ledgerHash, ledger, id, ledgerTimestamp, parent }) {
+    public async updateAccount(accountFindDB: Accounts, getBalancesLastLedger, getInfoLastLedger: InfoAccountDTO, elements: { ledgerHash, ledger, id, ledgerTimestamp, parent, kyc }) {
         const accountRepository = getRepository(Accounts);
         accountFindDB.balances = getBalancesLastLedger;
         accountFindDB.ledgerHash = elements.ledgerHash;
@@ -17,13 +17,14 @@ export class SyncAccount {
         accountFindDB.previousAffectingTransactionLedgerVersion = getInfoLastLedger.previousAffectingTransactionLedgerVersion;
         accountFindDB.previousInitiatedTransactionID = elements.id;
         accountFindDB.ledgerTimestamp = elements.ledgerTimestamp;
+        accountFindDB.kyc = elements.kyc ? elements.kyc : accountFindDB.kyc;
         // update account
         await accountRepository.save(accountFindDB);
         console.log(`update account ${accountFindDB.account}`);
     }
 
     // tslint:disable-next-line:max-line-length
-    public async insertAccount(account, getBalancesLastLedger,  getInfoLastLedger: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent}) {
+    public async insertAccount(account, getBalancesLastLedger,  getInfoLastLedger: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent, kyc}) {
         const accountRepository = getRepository(Accounts);
         const newAccount = new Accounts();
         newAccount.account = account;
@@ -36,6 +37,7 @@ export class SyncAccount {
         newAccount.previousAffectingTransactionLedgerVersion = getInfoLastLedger.previousAffectingTransactionLedgerVersion;
         newAccount.previousInitiatedTransactionID = elements.id;
         newAccount.ledgerTimestamp = elements.ledgerTimestamp;
+        newAccount.kyc = elements.kyc ? elements.kyc : null;
         newAccount.parent = elements.parent;
         // insert new account
         await accountRepository.insert(newAccount);
@@ -43,7 +45,7 @@ export class SyncAccount {
     }
 
     // tslint:disable-next-line:max-line-length
-    public async insertNewAccountVersion(account, getBalancesAccount,  getInfoAccount: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent}) {
+    public async insertNewAccountVersion(account, getBalancesAccount,  getInfoAccount: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent, kyc}) {
         const accountVersionRepository = getRepository(AccountVersions);
         const newAccountVersion = new AccountVersions();
         newAccountVersion.account = account;
@@ -56,6 +58,7 @@ export class SyncAccount {
         newAccountVersion.previousInitiatedTransactionID = elements.id;
         newAccountVersion.sequence = getInfoAccount.sequence;
         newAccountVersion.ledgerTimestamp = elements.ledgerTimestamp;
+        newAccountVersion.kyc = elements.kyc ? elements.kyc : newAccountVersion.kyc;
         // insert new accountVersion
         await accountVersionRepository.insert(newAccountVersion);
         console.log(`insert VersionAccount ${account}`);

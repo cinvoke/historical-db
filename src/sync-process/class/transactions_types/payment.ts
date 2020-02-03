@@ -4,7 +4,6 @@ import { BalanceDto } from '../../../transactions/dto/balanceDTO';
 import { InfoAccountDTO } from '../dto/infoAccountDTO';
 import { getRepository } from 'typeorm';
 import { Accounts } from '../../../accounts/entity/account.entity';
-import { AccountVersions } from '../../../account-version/entity/accountVersion.entity';
 
 const syncAccount = new SyncAccount();
 
@@ -19,6 +18,7 @@ export const paymentTransaction = async (transaction: TransactionModifiedDTO, cs
         ledgerHash: transaction.ledgerHash,
         ledgerTimestamp: transaction.ledgerTimestamp,
         parent: transaction.specification.source.address,
+        kyc: transaction.specification.KYC ? transaction.specification.KYC : null,
     };
 
     // tslint:disable-next-line:forin
