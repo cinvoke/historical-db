@@ -61,10 +61,11 @@ export class SyncTransactions {
                             console.log(`---------------------ledger-${iterator}------------------------` );
                             // send tx modified for add accounts
                             if (transaction.type === 'payment') { // OK
-                                const transactionModified = {
+                                const transactionModified: TransactionModifiedDTO = {
                                     ledgerHash: LedgerFinder.ledgerHash,
                                     ledgerVersion: LedgerFinder.ledgerVersion,
                                     ledgerTimestamp: LedgerFinder.closeTime,
+                                    accountId : transaction.address,
                                     ...transaction,
                                 };
                                 // sync accounts
@@ -75,10 +76,11 @@ export class SyncTransactions {
 
                             if (transaction.type === 'setCRNRound') { //
                                 console.log('transaction type SetCRNRound ledger:' + iterator);
-                                const transactionModified = {
+                                const transactionModified: TransactionModifiedDTO = {
                                     ledgerHash: LedgerFinder.ledgerHash,
                                     ledgerVersion: LedgerFinder.ledgerVersion,
                                     ledgerTimestamp: LedgerFinder.closeTime,
+                                    accountId : transaction.address,
                                     ...transaction,
                                 };
                                 await crnTransaction(transactionModified, this.cscApi);
@@ -86,10 +88,11 @@ export class SyncTransactions {
 
                             if (transaction.type === 'kycSet') { // OK
                                 console.log('transaction type KYCSet ledger:' + iterator);
-                                const transactionModified = {
+                                const transactionModified: TransactionModifiedDTO = {
                                     ledgerHash: LedgerFinder.ledgerHash,
                                     ledgerVersion: LedgerFinder.ledgerVersion,
                                     ledgerTimestamp: LedgerFinder.closeTime,
+                                    accountId : transaction.address,
                                     ...transaction,
                                 };
                                 await kycTransaction(transactionModified, this.cscApi);
@@ -98,10 +101,11 @@ export class SyncTransactions {
 
                             if (transaction.type === 'trustline') { // OK
                                 console.log('transaction type trustline ledger:' + iterator);
-                                const transactionModified = {
+                                const transactionModified: TransactionModifiedDTO = {
                                     ledgerHash: LedgerFinder.ledgerHash,
                                     ledgerVersion: LedgerFinder.ledgerVersion,
                                     ledgerTimestamp: LedgerFinder.closeTime,
+                                    accountId : transaction.address,
                                     ...transaction,
                                 };
                                 await trustTransaction(transactionModified, this.cscApi);
@@ -121,6 +125,7 @@ export class SyncTransactions {
                                     ledgerHash: LedgerFinder.ledgerHash,
                                     ledgerVersion: LedgerFinder.ledgerVersion,
                                     ledgerTimestamp: LedgerFinder.closeTime,
+                                    accountId : transaction.address,
                                 });
                             }
                         }

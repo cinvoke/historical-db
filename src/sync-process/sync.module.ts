@@ -21,7 +21,7 @@ export class SyncModule {
                 // get Ledger Actually
             const ledgerActually = await cscApi.getLedgerVersion();
             // tslint:disable-next-line:no-unused-expression
-            new SyncLedger(ledgerActually);
+            // new SyncLedger(ledgerActually);
             // tslint:disable-next-line:no-unused-expression
             new SyncTransactions(ledgerActually);
         }).catch(console.error);

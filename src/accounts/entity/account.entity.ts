@@ -1,12 +1,12 @@
 import { Entity, Unique, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity()
-@Unique(['account'])
+@Unique(['accountId'])
 export class Accounts {
 
     @Column('varchar')
     @PrimaryColumn()
-    account: string;
+    accountId: string;
 
     @Column('integer', {nullable : true})
     sequence: number;
@@ -21,11 +21,7 @@ export class Accounts {
     parent: string;
 
     @Column('json', { nullable: true })
-    kyc: Array<{
-        description: string,
-        date: Date,
-        verification: any[],
-    }>;
+    kyc: boolean;
 
     @Column('json', { nullable: true })
     balances: any[];

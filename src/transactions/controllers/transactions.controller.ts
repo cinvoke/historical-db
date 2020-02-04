@@ -9,7 +9,7 @@ export class TransactionsController {
         private transactionsService: TransactionsService,
     ) { }
 
-    @Get()
+    @Get('')
     async getAllTransactions(@Res() response) {
         try {
             const allTransactions = await this.transactionsService.getAll();
@@ -17,9 +17,9 @@ export class TransactionsController {
             return response.status(HttpStatus.OK).json(allTransactions);
         } catch (error) {
             throw new HttpException({
-                status: HttpStatus.FORBIDDEN,
+                status: HttpStatus.BAD_REQUEST,
                 error: 'Error Get all Transactions',
-            }, 403);
+            }, 400);
         }
     }
 
@@ -29,8 +29,8 @@ export class TransactionsController {
         const transactionFinder = await this.transactionsService.getTransaction(ledgerHash);
         if (!transactionFinder) {
             throw new HttpException({
-                status: HttpStatus.FORBIDDEN, error: 'Not found transactions',
-            }, 403);
+                status: HttpStatus.BAD_REQUEST, error: 'Not found transactions',
+            }, 400);
         }
         return response.status(HttpStatus.OK).json(transactionFinder);
     }
@@ -41,20 +41,21 @@ export class TransactionsController {
         const accountFinder = await this.transactionsService.findTxMe(account);
         if (!accountFinder) {
             throw new HttpException({
-                status: HttpStatus.FORBIDDEN, error: 'Not found account',
-            }, 403);
+                status: HttpStatus.BAD_REQUEST, error: 'Not found account',
+            }, 400);
         }
         return response.status(HttpStatus.OK).json(accountFinder);
     }
 
-    @Post()
-    async getLimitedTransactions(@Body() body , @Res() response) {
+    @Post('limited')
+    async getLimitedTransactions(@Body() body, @Res() response) {
+        console.log(body);
         if (!body) { throw new HttpException({ status: HttpStatus.FORBIDDEN, error: 'missing options' }, 403); }
-        const limitedFinder = await this.transactionsService.findTxMe(body);
+        const limitedFinder = await this.transactionsService.getLimitedTransactions(body);
         if (!limitedFinder) {
             throw new HttpException({
-                status: HttpStatus.FORBIDDEN, error: 'Not found transactions',
-            }, 403);
+                status: HttpStatus.BAD_REQUEST, error: 'Not found transactions',
+            }, 400);
         }
         return response.status(HttpStatus.OK).json(limitedFinder);
     }

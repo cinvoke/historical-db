@@ -10,6 +10,7 @@ export const kycTransaction = async (transaction: TransactionModifiedDTO, cscAPI
     const AccountRepository = getRepository(Accounts);
     const ledger = transaction.ledgerVersion;
     const elements = {
+        sequence: transaction.sequence,
         ledger: transaction.ledgerVersion,
         id: transaction.id,
         ledgerHash: transaction.ledgerHash,
@@ -19,15 +20,15 @@ export const kycTransaction = async (transaction: TransactionModifiedDTO, cscAPI
     };
 
     // tslint:disable-next-line:forin
-    for (const account in transaction.outcome.balanceChanges) {
+    for (const accountId in transaction.outcome.balanceChanges) {
         try {
-            const accountFindDB = await AccountRepository.findOne({ account });
-            const getBalancesLastLedger = await cscAPI.getBalances(account);
-            const getInfoLastLedger: InfoAccountDTO = await cscAPI.getAccountInfo(account);
+            const accountFindDB = await AccountRepository.findOne({ accountId });
+            const getBalancesLastLedger = await cscAPI.getBalances(accountId);
+            const getInfoLastLedger: InfoAccountDTO = await cscAPI.getAccountInfo(accountId);
 
-            const getInfoAccount: InfoAccountDTO = await cscAPI.getAccountInfo(account, { ledgerVersion : ledger });
+            const getInfoAccount: InfoAccountDTO = await cscAPI.getAccountInfo(accountId, { ledgerVersion : ledger });
             // console.log(`getInfo: ${account}`, getInfoAccount);
-            const getBalancesAccount = await cscAPI.getBalances(account, { ledgerVersion: ledger });
+            const getBalancesAccount = await cscAPI.getBalances(accountId, { ledgerVersion: ledger });
             // console.log(`getBalances: ${account}`, getBalancesAccount);
 
             if (accountFindDB) {
@@ -36,12 +37,12 @@ export const kycTransaction = async (transaction: TransactionModifiedDTO, cscAPI
                     await syncAccount.updateAccount(accountFindDB, getBalancesLastLedger, getInfoLastLedger, elements);
                 }
             } else {
-                await syncAccount.insertAccount(account, getBalancesLastLedger, getInfoLastLedger, elements);
+                await syncAccount.insertAccount(accountId, getBalancesLastLedger, getInfoLastLedger, elements);
             }
-            await syncAccount.insertNewAccountVersion(account, getBalancesAccount, getInfoAccount, elements);
+            await syncAccount.insertNewAccountVersion(accountId, getBalancesAccount, getInfoAccount, elements);
 
         } catch (error) {
-            console.log(`Error get info or balance account: ${account}`);
+            console.log(`Error get info or balance account: ${accountId}`);
         }
     }
 

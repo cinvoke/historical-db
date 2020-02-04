@@ -10,6 +10,7 @@ export const trustTransaction = async (transaction: TransactionModifiedDTO, cscA
     const AccountRepository = getRepository(Accounts);
     const ledger = transaction.ledgerVersion;
     const elements = {
+        sequence: transaction.sequence,
         ledger: transaction.ledgerVersion,
         id: transaction.id,
         ledgerHash: transaction.ledgerHash,
@@ -21,7 +22,7 @@ export const trustTransaction = async (transaction: TransactionModifiedDTO, cscA
     // tslint:disable-next-line:forin
     for (const account in transaction.outcome.balanceChanges) {
         try {
-            const accountFindDB = await AccountRepository.findOne({ account });
+            const accountFindDB = await AccountRepository.findOne({ accountId : account });
             const getBalancesLastLedger = await cscAPI.getBalances(account);
             const getInfoLastLedger: InfoAccountDTO = await cscAPI.getAccountInfo(account);
 

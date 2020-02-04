@@ -1,12 +1,12 @@
 export class TransactionDTO {
     type: string;
-    address: string;
+    accountId: string;
     sequence: number;
     ledgerTimestamp: Date;
     id: string;
     specification: {
         source: {
-            address: string,
+            accountId: string,
             maxAmount: {
                 currency: string,
                 value: string,
@@ -14,7 +14,7 @@ export class TransactionDTO {
             };
         },
         destination: {
-            address: string,
+            accountId: string,
             amount: {
                 currency: string,
                 value: string,

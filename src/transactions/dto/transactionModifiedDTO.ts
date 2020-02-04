@@ -3,20 +3,21 @@ export class TransactionModifiedDTO {
     ledgerVersion: number;
     ledgerTimestamp: string;
     type: string;
-    address: string;
+    accountId: string;
     sequence: number;
     id: string;
     specification: {
         source: {
-            address: string,
+            accountId: string,
             maxAmount: {
                 currency: string,
                 value: string,
                 counterparty: string;
             };
+            kyc: boolean;
         },
         destination: {
-            address: string,
+            accountId: string,
             amount: {
                 currency: string,
                 value: string,

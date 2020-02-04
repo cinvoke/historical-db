@@ -5,7 +5,7 @@ export class Account {
         description: 'Account for',
         type: String,
     })
-    account: string;
+    accountId: string;
 
     @ApiProperty({
         description: 'The age of a cat',

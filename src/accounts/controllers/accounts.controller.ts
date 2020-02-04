@@ -12,12 +12,12 @@ export class AccountsController {
     async getAllAccounts(@Res() response) {
         const allAccounts: Account[] = await this.accountsService.getAll();
         if (!allAccounts) { return response.status(HttpStatus.FORBIDDEN).json('Error Getting  All Accounts'); }
-        const allCounts = allAccounts.map( item =>  item.account );
+        const allCounts = allAccounts.map( item =>  item.accountId );
         return response.status(HttpStatus.OK).json(allCounts);
     }
 
-    @Get(':id')
-    updateCat( @Param('id') param , @Body() account: Account  ): object {
-        return { status : `Updated user Successfully ${param}`};
+    @Get(':account')
+    updateCat( @Param('account') account  ) {
+        console.log(account);
     }
 }

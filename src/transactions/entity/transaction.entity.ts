@@ -17,7 +17,7 @@ export class Transactions {
     type: string;
 
     @Column('varchar', {nullable : true})
-    address: string;
+    accountId: string;
 
     @Column('integer', {nullable : true})
     sequence: number;
@@ -29,15 +29,16 @@ export class Transactions {
     @Column('json', {nullable : true})
     specification: {
         source?: {
-            address: string,
+            accountId: string,
             maxAmount: {
                 currency: string,
                 value: string,
                 counterparty: string;
             };
+            kyc: boolean,
         },
         destination?: {
-            address: string,
+            accountId: string,
             amount: {
                 currency: string,
                 value: string,

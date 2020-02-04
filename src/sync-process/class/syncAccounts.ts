@@ -20,14 +20,14 @@ export class SyncAccount {
         accountFindDB.kyc = elements.kyc ? elements.kyc : accountFindDB.kyc;
         // update account
         await accountRepository.save(accountFindDB);
-        console.log(`update account ${accountFindDB.account}`);
+        console.log(`update account ${accountFindDB.accountId}`);
     }
 
     // tslint:disable-next-line:max-line-length
     public async insertAccount(account, getBalancesLastLedger,  getInfoLastLedger: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent, kyc}) {
         const accountRepository = getRepository(Accounts);
         const newAccount = new Accounts();
-        newAccount.account = account;
+        newAccount.accountId = account;
         newAccount.balances = getBalancesLastLedger;
         newAccount.sequence = getInfoLastLedger.sequence;
         newAccount.ledgerHash = elements.ledgerHash;
@@ -45,10 +45,10 @@ export class SyncAccount {
     }
 
     // tslint:disable-next-line:max-line-length
-    public async insertNewAccountVersion(account, getBalancesAccount,  getInfoAccount: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent, kyc}) {
+    public async insertNewAccountVersion(account, getBalancesAccount,  getInfoAccount: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent, kyc, sequence}) {
         const accountVersionRepository = getRepository(AccountVersions);
         const newAccountVersion = new AccountVersions();
-        newAccountVersion.account = account;
+        newAccountVersion.accountId = account;
         newAccountVersion.balances = getBalancesAccount;
         newAccountVersion.ledgerHash = elements.ledgerHash;
         newAccountVersion.ledgerVersion = elements.ledger;
@@ -56,7 +56,7 @@ export class SyncAccount {
         newAccountVersion.previousAffectingTransactionID = getInfoAccount.previousAffectingTransactionID;
         newAccountVersion.previousAffectingTransactionLedgerVersion = getInfoAccount.previousAffectingTransactionLedgerVersion;
         newAccountVersion.previousInitiatedTransactionID = elements.id;
-        newAccountVersion.sequence = getInfoAccount.sequence;
+        newAccountVersion.sequence = elements.sequence;
         newAccountVersion.ledgerTimestamp = elements.ledgerTimestamp;
         newAccountVersion.kyc = elements.kyc ? elements.kyc : newAccountVersion.kyc;
         // insert new accountVersion

@@ -1,14 +1,13 @@
 import { Entity, Unique, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity()
-@Unique(['account', 'ledgerHash'])
 export class AccountVersions {
 
     @Column('varchar')
     @PrimaryColumn()
-    account: string;
+    accountId: string;
 
-    @Column('integer', {nullable : true})
+    @PrimaryColumn('integer')
     sequence: number;
 
     @PrimaryColumn('integer')
@@ -18,7 +17,7 @@ export class AccountVersions {
     ledgerTimestamp: Date;
 
     @Column('json', { nullable: true })
-    kyc: Array<{ description: string, date: Date, verification: any[] }>;
+    kyc: boolean;
 
     @Column('json', { nullable: true })
     balances: any[];
