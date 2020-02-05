@@ -4,4 +4,5 @@ export class InfoAccountDTO​​ {
     ownerCount: number;
     previousAffectingTransactionID: string;
     previousAffectingTransactionLedgerVersion: number;
+    kycVerified: boolean;
 }

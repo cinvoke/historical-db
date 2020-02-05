@@ -6,7 +6,7 @@ import { InfoAccountDTO } from './dto/infoAccountDTO';
 export class SyncAccount {
 
     // tslint:disable-next-line:max-line-length
-    public async updateAccount(accountFindDB: Accounts, getBalancesLastLedger, getInfoLastLedger: InfoAccountDTO, elements: { ledgerHash, ledger, id, ledgerTimestamp, parent, kyc }) {
+    public async updateAccount(accountFindDB: Accounts, getBalancesLastLedger, getInfoLastLedger: InfoAccountDTO, elements: { ledgerHash, ledger, id, ledgerTimestamp, parent }) {
         const accountRepository = getRepository(Accounts);
         accountFindDB.balances = getBalancesLastLedger;
         accountFindDB.ledgerHash = elements.ledgerHash;
@@ -24,7 +24,7 @@ export class SyncAccount {
     }
 
     // tslint:disable-next-line:max-line-length
-    public async insertAccount(account, getBalancesLastLedger,  getInfoLastLedger: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent, kyc}) {
+    public async insertAccount(account, getBalancesLastLedger,  getInfoLastLedger: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent}) {
         const accountRepository = getRepository(Accounts);
         const newAccount = new Accounts();
         newAccount.accountId = account;
@@ -45,7 +45,7 @@ export class SyncAccount {
     }
 
     // tslint:disable-next-line:max-line-length
-    public async insertNewAccountVersion(account, getBalancesAccount,  getInfoAccount: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent, kyc, sequence}) {
+    public async insertNewAccountVersion(account, getBalancesAccount,  getInfoAccount: InfoAccountDTO, elements: {ledgerHash, ledger, id, ledgerTimestamp, parent, sequence}) {
         const accountVersionRepository = getRepository(AccountVersions);
         const newAccountVersion = new AccountVersions();
         newAccountVersion.accountId = account;

@@ -19,7 +19,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@casinocoin/libjs": "^2.0.12",
+    "@casinocoin/libjs": "^2.0.13",
     "@nestjs/common": "^6.11.1",
     "@nestjs/core": "^6.11.1",
     "@nestjs/platform-express": "^6.11.1",

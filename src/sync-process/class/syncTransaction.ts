@@ -4,7 +4,6 @@ import { kycTransaction } from './transactions_types/kycSet';
 import { crnTransaction } from './transactions_types/SetCRNRound';
 import { getRepository } from 'typeorm';
 import { Transactions } from '../../transactions/entity/transaction.entity';
-import { TransactionDTO } from '../../transactions/dto/transactionDTO';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 
 import { CasinocoinAPI } from '@casinocoin/libjs';

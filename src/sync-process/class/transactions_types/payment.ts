@@ -19,17 +19,20 @@ export const paymentTransaction = async (transaction: TransactionModifiedDTO, cs
         ledgerHash: transaction.ledgerHash,
         ledgerTimestamp: transaction.ledgerTimestamp,
         parent: transaction.specification.source.accountId,
-        kyc: transaction.specification.KYC ? transaction.specification.KYC : null,
     };
 
     // tslint:disable-next-line:forin
     for (const accountId in transaction.outcome.balanceChanges) {
         try {
+            // Find account in DB
             const accountFindDB = await AccountRepository.findOne({ accountId });
+
             const getBalancesLastLedgerAccount = await cscAPI.getBalances(accountId);
             const getInfoLastLedgerAccount: InfoAccountDTO = await cscAPI.getAccountInfo(accountId);
+            const kycVersionFinal = getInfoLastLedgerAccount.kycVerified;
 
-            const getInfoAccount: InfoAccountDTO = await cscAPI.getAccountInfo(accountId, { ledgerVersion : ledger });
+            const getInfoAccount: InfoAccountDTO = await cscAPI.getAccountInfo(accountId, { ledgerVersion: ledger });
+            const kycVersionLedger = getInfoAccount.kycVerified;
             // console.log(`getInfo: ${account}`, getInfoAccount);
             const getBalancesAccount = await cscAPI.getBalances(accountId, { ledgerVersion: ledger });
             // console.log(`getBalances: ${account}`, getBalancesAccount);
