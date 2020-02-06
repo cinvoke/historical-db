@@ -41,7 +41,7 @@ export class SyncTransactions {
 
     private async initSync(lastLegerVersionAccounts, lastLedgerVersionCSC) {
         // this.syncService.subjectSync.next(true);
-        let iterator = lastLegerVersionAccounts;
+        let iterator = 150001;
         console.log('lastLegerVersionAccounts', iterator, 'lastLedgerVersionCSC', lastLedgerVersionCSC);
         this.cscApi.connect().then(async () => {
             while (iterator <= lastLedgerVersionCSC) {
@@ -83,6 +83,7 @@ export class SyncTransactions {
                                     ...transaction,
                                 };
                                 await crnTransaction(transactionModified, this.cscApi);
+                                await this.TransactionsRepository.insert(transactionModified);
                             }
 
                             if (transaction.type === 'kycSet') { // OK
@@ -118,14 +119,15 @@ export class SyncTransactions {
 
                             if (transaction.type === 'feeUpdate') { // OK
                                 console.log('transaction type AccountSet ledger:' + iterator);
-                                setAccountTransaction(transaction);
-                                await this.TransactionsRepository.insert({
+                                const transactionModified = {
                                     ...transaction,
                                     ledgerHash: LedgerFinder.ledgerHash,
                                     ledgerVersion: LedgerFinder.ledgerVersion,
                                     ledgerTimestamp: LedgerFinder.closeTime,
-                                    accountId : transaction.address,
-                                });
+                                    accountId: transaction.address,
+                                };
+                                setAccountTransaction(transaction);
+                                await this.TransactionsRepository.insert(transactionModified);
                             }
                         }
                     }

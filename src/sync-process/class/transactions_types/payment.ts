@@ -33,19 +33,17 @@ export const paymentTransaction = async (transaction: TransactionModifiedDTO, cs
 
             const getInfoAccount: InfoAccountDTO = await cscAPI.getAccountInfo(accountId, { ledgerVersion: ledger });
             const kycVersionLedger = getInfoAccount.kycVerified;
-            // console.log(`getInfo: ${account}`, getInfoAccount);
             const getBalancesAccount = await cscAPI.getBalances(accountId, { ledgerVersion: ledger });
-            // console.log(`getBalances: ${account}`, getBalancesAccount);
 
             if (accountFindDB) {
-                if (ledger > accountFindDB.ledgerVersion) {
+                if (ledger >= accountFindDB.ledgerVersion) {
                     // Update Account
-                    await syncAccount.updateAccount(accountFindDB, getBalancesLastLedgerAccount, getInfoLastLedgerAccount, elements);
+                    await syncAccount.updateAccount(accountFindDB, getBalancesLastLedgerAccount, getInfoLastLedgerAccount, elements, kycVersionFinal);
                 }
             } else {
-                await syncAccount.insertAccount(accountId, getBalancesLastLedgerAccount, getInfoLastLedgerAccount, elements);
+                await syncAccount.insertAccount(accountId, getBalancesLastLedgerAccount, getInfoLastLedgerAccount, elements, kycVersionFinal);
             }
-            await syncAccount.insertNewAccountVersion(accountId, getBalancesAccount, getInfoAccount, elements);
+            await syncAccount.insertNewAccountVersion(accountId, getBalancesAccount, getInfoAccount, elements, kycVersionLedger);
 
         } catch (error) {
             console.log(`Error get info or balance account: ${accountId}`, error);
