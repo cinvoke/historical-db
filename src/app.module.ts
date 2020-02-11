@@ -11,9 +11,13 @@ import { Accounts } from './accounts/entity/account.entity';
 import { Transactions } from './transactions/entity/transaction.entity';
 import { Ledgers } from './ledgers/entity/ledger.entity';
 import { AccVersionModule } from './account-version/acc-version.module';
-import * as config from 'yaml-config';
 import { AccountVersions } from './account-version/entity/accountVersion.entity';
 import { ScheduleModule } from '@nestjs/schedule';
+import * as config from 'yaml-config';
+import { SpecialAccountsModule } from './specialaccounts/specialaccounts.module';
+import { SpecialAccount } from './specialaccounts/entity/specialAccount.entity';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { MorganModule, MorganInterceptor } from 'nest-morgan';
 
 // load settings
 const settings = config.readConfig('config.yml');
@@ -28,16 +32,25 @@ const settings = config.readConfig('config.yml');
       username: settings.database.username,
       password: settings.database.password,
       database: settings.database.database,
-      entities: [Transactions, Accounts, Ledgers, AccountVersions],
-      synchronize: false,
+      entities: [Transactions, Accounts, Ledgers, AccountVersions, SpecialAccount],
+      synchronize: true,
     }),
     AccountsModule,
     TransactionsModule,
     SyncModule,
     AccVersionModule,
     ScheduleModule.forRoot(),
+    SpecialAccountsModule,
+    MorganModule.forRoot(),
   ],
   controllers: [AppController],
-  providers: [AppService, SyncService],
+  providers: [
+    AppService,
+    SyncService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MorganInterceptor('combined'),
+    },
+  ],
 })
 export class AppModule {}
