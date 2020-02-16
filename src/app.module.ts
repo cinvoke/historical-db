@@ -13,11 +13,11 @@ import { Ledgers } from './ledgers/entity/ledger.entity';
 import { AccVersionModule } from './account-version/acc-version.module';
 import { AccountVersions } from './account-version/entity/accountVersion.entity';
 import { ScheduleModule } from '@nestjs/schedule';
-import * as config from 'yaml-config';
 import { SpecialAccountsModule } from './specialaccounts/specialaccounts.module';
 import { SpecialAccount } from './specialaccounts/entity/specialAccount.entity';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { MorganModule, MorganInterceptor } from 'nest-morgan';
+import * as config from 'yaml-config';
 
 // load settings
 const settings = config.readConfig('config.yml');

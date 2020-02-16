@@ -32,9 +32,18 @@ export class TransactionsService {
   async getLimitedTransactions(body) {
     const { skip, take } = body;
     return await this.transactionRepository.createQueryBuilder('transactions')
-            .select()
-            .skip(skip) // number of tx to skip first
-            .take(take) // take number tx
-            .getMany();
+      .select()
+      .skip(skip) // number of tx to skip first
+      .take(take) // take number tx
+      .getMany();
+  }
+
+  async getLimitedTransactionsByAccount(body) {
+    const { skip, take, account } = body;
+    return await this.transactionRepository.createQueryBuilder('transactions')
+      .where('transactions.accountId = :accountId', { accountId: account })
+      .skip(skip) // number of tx to skip first
+      .take(take) // take number tx
+      .getMany();
   }
 }
