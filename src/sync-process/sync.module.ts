@@ -23,7 +23,7 @@ export class SyncModule {
             // tslint:disable-next-line:no-unused-expression
             // new SyncLedger(ledgerActually);
             // tslint:disable-next-line:no-unused-expression
-            // new SyncTransactions(ledgerActually);
+            new SyncTransactions(ledgerActually);
         }).catch(console.error);
     }
     console: any;

@@ -8,7 +8,7 @@ export class TransactionModifiedDTO {
     id: string;
     specification: {
         source: {
-            accountId: string,
+            address: string,
             maxAmount: {
                 currency: string,
                 value: string,
@@ -17,7 +17,7 @@ export class TransactionModifiedDTO {
             kyc: boolean;
         },
         destination: {
-            accountId: string,
+            address: string,
             amount: {
                 currency: string,
                 value: string,

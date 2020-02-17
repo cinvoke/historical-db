@@ -41,7 +41,7 @@ export class SyncTransactions {
 
     private async initSync(lastLegerVersionAccounts, lastLedgerVersionCSC) {
         // this.syncService.subjectSync.next(true);
-        let iterator = 150001;
+        let iterator = lastLegerVersionAccounts;
         console.log('lastLegerVersionAccounts', iterator, 'lastLedgerVersionCSC', lastLedgerVersionCSC);
         this.cscApi.connect().then(async () => {
             while (iterator <= lastLedgerVersionCSC) {

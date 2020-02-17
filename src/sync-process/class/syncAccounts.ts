@@ -60,7 +60,7 @@ export class SyncAccount {
         newAccountVersion.ledgerTimestamp = elements.ledgerTimestamp;
         newAccountVersion.kyc = kycVersionLedger;
         // insert new accountVersion
-        await accountVersionRepository.insert(newAccountVersion);
+        await accountVersionRepository.save(newAccountVersion);
         console.log(`insert VersionAccount ${account}`);
     }
 

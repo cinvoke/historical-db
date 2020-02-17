@@ -8,7 +8,6 @@ import { Accounts } from '../../../accounts/entity/account.entity';
 const syncAccount = new SyncAccount();
 
 export const paymentTransaction = async (transaction: TransactionModifiedDTO, cscAPI) => {
-
     const AccountRepository = getRepository(Accounts);
 
     const ledger = transaction.ledgerVersion;
@@ -18,7 +17,7 @@ export const paymentTransaction = async (transaction: TransactionModifiedDTO, cs
         id: transaction.id,
         ledgerHash: transaction.ledgerHash,
         ledgerTimestamp: transaction.ledgerTimestamp,
-        parent: transaction.specification.source.accountId,
+        parent: transaction.specification.source.address,
     };
 
     // tslint:disable-next-line:forin

@@ -6,7 +6,7 @@ export class TransactionDTO {
     id: string;
     specification: {
         source: {
-            accountId: string,
+            address: string,
             maxAmount: {
                 currency: string,
                 value: string,
@@ -14,7 +14,7 @@ export class TransactionDTO {
             };
         },
         destination: {
-            accountId: string,
+            address: string,
             amount: {
                 currency: string,
                 value: string,
