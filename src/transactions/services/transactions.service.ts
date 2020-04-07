@@ -38,8 +38,19 @@ export class TransactionsService {
       .getMany();
   }
 
+  async getLengthTransactions(account) {
+    return await this.transactionRepository.createQueryBuilder('transactions')
+    .select('SUM(transactions.accountId)', 'sum')
+    .where('transactions.accountId = :accountId', { accountId: account })
+    .getRawOne();
+      // .select()
+      // .where('transactions.accountId = :accountId', { accountId: account })
+      // .c
+  }
+
   async getLimitedTransactionsByAccount(body) {
     const { skip, take, account } = body;
+    console.log( { skip, take, account });
     return await this.transactionRepository.createQueryBuilder('transactions')
       .where('transactions.accountId = :accountId', { accountId: account })
       .skip(skip) // number of tx to skip first

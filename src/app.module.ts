@@ -49,7 +49,7 @@ const settings = config.readConfig('config.yml');
     SyncService,
     {
       provide: APP_INTERCEPTOR,
-      useClass: MorganInterceptor('combined'),
+      useClass: MorganInterceptor('dev'),
     },
   ],
 })

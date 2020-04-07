@@ -1,6 +1,6 @@
 import { TransactionsService } from './../services/transactions.service';
-import { Controller, Get, Res, HttpStatus, HttpException, Param, Post, Body, UseInterceptors } from '@nestjs/common';
-import { MorganInterceptor } from 'nest-morgan';
+import { Controller, Get, Res, HttpStatus, HttpException, Param, Post, Body } from '@nestjs/common';
+
 
 @Controller('transactions')
 export class TransactionsController {
@@ -8,7 +8,7 @@ export class TransactionsController {
         private transactionsService: TransactionsService,
     ) { }
 
-    @UseInterceptors(MorganInterceptor('dev'))
+
     @Get('')
     async getAllTransactions(@Res() response) {
         try {
@@ -23,7 +23,6 @@ export class TransactionsController {
         }
     }
 
-    @UseInterceptors(MorganInterceptor('dev'))
     @Get(':ledgerHash')
     async getTransaction(@Param('ledgerHash') ledgerHash, @Res() response) {
         if (!ledgerHash) { throw new HttpException({ status: HttpStatus.FORBIDDEN, error: 'missing ledgerHash' }, 403); }
@@ -36,7 +35,7 @@ export class TransactionsController {
         return response.status(HttpStatus.OK).json(transactionFinder);
     }
 
-    @UseInterceptors(MorganInterceptor('dev'))
+
     @Get('findMovements/:account')
     async findTxMe(@Param('account') account, @Res() response) {
         if (!account) { throw new HttpException({ status: HttpStatus.FORBIDDEN, error: 'missing Account' }, 403); }
@@ -49,7 +48,6 @@ export class TransactionsController {
         return response.status(HttpStatus.OK).json(accountFinder);
     }
 
-    @UseInterceptors(MorganInterceptor('dev'))
     @Post('limited')
     async getLimitedTransactions(@Body() body, @Res() response) {
         console.log(body);
@@ -64,7 +62,6 @@ export class TransactionsController {
         return response.status(HttpStatus.OK).json(limitedFinder);
     }
 
-    @UseInterceptors(MorganInterceptor('dev'))
     @Post('limitedByAccount')
     async getLimitedTransactionsByAccount(@Body() body, @Res() response) {
         console.log(body);

@@ -1,10 +1,10 @@
-import { Controller, Get, Res, HttpStatus, Param, Body, HttpException, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Res, HttpStatus, Param, Body, HttpException } from '@nestjs/common';
 import { AccountsService } from '../services/accounts.service';
 import { Account } from '../class/Account';
 import { CasinocoinAPI } from '@casinocoin/libjs';
 import * as config from 'yaml-config';
-import { MorganInterceptor } from 'nest-morgan';
 const settings = config.readConfig('config.yml');
+
 @Controller('accounts')
 export class AccountsController {
     private cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
@@ -12,7 +12,6 @@ export class AccountsController {
         private accountsService: AccountsService,
     ) { }
 
-    @UseInterceptors(MorganInterceptor('dev'))
     @Get('')
     async getAllAccounts(@Res() response) {
         try {
@@ -28,7 +27,6 @@ export class AccountsController {
         }
     }
 
-    @UseInterceptors(MorganInterceptor('dev'))
     @Get('tokens')
     getAllTransactions(@Res() response) {
         this.cscApi.connect().then( () => {
@@ -45,7 +43,6 @@ export class AccountsController {
         });
     }
 
-    @UseInterceptors(MorganInterceptor('dev'))
     @Get('/:account')
     async findAccount(@Param('account') account, @Res() response) {
 
