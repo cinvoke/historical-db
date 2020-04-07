@@ -4,9 +4,9 @@ default:
   casinocoinServerProduction: 'ws://wsD01.casinocoin.org:7007/'
   database:
     type: 'postgres'
-    host: 'localhost'
+    host: 'apitest.casinocoin.org'
     port: 5432
-    username: 'postgres'
-    password: '0000'
-    database: 'historical_Proyect'
+    username: 'admin'
+    password: 'admin'
+    database: 'historical'
  
