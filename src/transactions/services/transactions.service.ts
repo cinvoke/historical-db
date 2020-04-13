@@ -29,6 +29,14 @@ export class TransactionsService {
     `);
   }
 
+  async findTxSendToMe(account) {
+    return await this.transactionRepository.query(`
+      SELECT *
+      FROM transactions
+      WHERE specification -> 'destination' ->> 'address' = '${account}'
+    `);
+  }
+
   async getLimitedTransactions(body) {
     const { skip, take } = body;
     return await this.transactionRepository.createQueryBuilder('transactions')

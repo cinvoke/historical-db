@@ -48,6 +48,18 @@ export class TransactionsController {
         return response.status(HttpStatus.OK).json(accountFinder);
     }
 
+    @Get('TxSendToMe/:account')
+    async findTxSendToMe(@Param('account') account, @Res() response) {
+        if (!account) { throw new HttpException({ status: HttpStatus.FORBIDDEN, error: 'missing Account' }, 403); }
+        const accountFinder = await this.transactionsService.findTxSendToMe(account);
+        if (!accountFinder) {
+            throw new HttpException({
+                status: HttpStatus.BAD_REQUEST, error: 'Not found account',
+            }, 400);
+        }
+        return response.status(HttpStatus.OK).json(accountFinder);
+    }
+
     @Post('limited')
     async getLimitedTransactions(@Body() body, @Res() response) {
         console.log(body);
