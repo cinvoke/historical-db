@@ -1,7 +1,7 @@
-import { setAccountTransaction } from './transactions_types/accountSet';
-import { trustTransaction } from './transactions_types/trustSet';
-import { kycTransaction } from './transactions_types/kycSet';
-import { crnTransaction } from './transactions_types/SetCRNRound';
+import { setAccountTransaction } from '../class/transactions_types/accountSet';
+import { trustTransaction } from '../class/transactions_types/trustSet';
+import { kycTransaction } from '../class/transactions_types/kycSet';
+import { crnTransaction } from '../class/transactions_types/SetCRNRound';
 import { getRepository } from 'typeorm';
 import { Transactions } from '../../transactions/entity/transaction.entity';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
@@ -9,10 +9,10 @@ import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 import { CasinocoinAPI } from '@casinocoin/libjs';
 import * as config from 'yaml-config';
 import { TransactionModifiedDTO } from '../../transactions/dto/transactionModifiedDTO';
-import { paymentTransaction } from './transactions_types/payment';
+import { paymentTransaction } from '../class/transactions_types/payment';
 import { Accounts } from '../../accounts/entity/account.entity';
 import { Injectable } from '@nestjs/common';
-import { SyncService } from '../services/sync/sync.service';
+import { SyncService } from './sync.service';
 import { CasinocoinService } from '../../casinocoin/casinocoin.service';
 const settings = config.readConfig('config.yml');
 
