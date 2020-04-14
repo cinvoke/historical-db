@@ -5,7 +5,6 @@ import { LedgersModule } from './ledgers/ledgers.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AccountsModule } from './accounts/accounts.module';
 import { TransactionsModule } from './transactions/transactions';
-import { SyncModule } from './sync-process/sync.module';
 import { SyncService } from './sync-process/services/sync/sync.service';
 import { Accounts } from './accounts/entity/account.entity';
 import { Transactions } from './transactions/entity/transaction.entity';
@@ -18,6 +17,7 @@ import { SpecialAccount } from './specialaccounts/entity/specialAccount.entity';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { MorganModule, MorganInterceptor } from 'nest-morgan';
 import * as config from 'yaml-config';
+import { GlobalModule } from './global/global.module';
 
 // load settings
 const settings = config.readConfig('config.yml');
@@ -37,11 +37,11 @@ const settings = config.readConfig('config.yml');
     }),
     AccountsModule,
     TransactionsModule,
-    SyncModule,
     AccVersionModule,
     ScheduleModule.forRoot(),
     SpecialAccountsModule,
     MorganModule.forRoot(),
+    GlobalModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,30 +1,12 @@
 import { Module, Logger } from '@nestjs/common';
 import { SyncService } from './services/sync/sync.service';
-import { CasinocoinAPI } from '@casinocoin/libjs';
-import { SyncLedger } from './class/syncLedgers';
-import * as config from 'yaml-config';
-import { SyncTransactions } from './class/syncTransaction';
-const settings = config.readConfig('config.yml');
+import { SyncTransactionsService } from './class/syncTransaction.service';
 
 @Module({
-    providers: [SyncService],
+    providers: [SyncService, SyncTransactionsService],
 })
 export class SyncModule {
 
-    constructor(private readonly syncService: SyncService) {
-        const cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
-        cscApi.connect().then(async () => {
-            // get the current server_info
-            cscApi.getServerInfo().then(info => {
-                Logger.log('### CSC - Connected with casino coin');
-            });
-            // get Ledger Actually
-            const ledgerActually = await cscApi.getLedgerVersion();
-            // tslint:disable-next-line:no-unused-expression
-            new SyncLedger(ledgerActually);
-            // tslint:disable-next-line:no-unused-expression
-            new SyncTransactions(ledgerActually);
-        }).catch(error => Logger.log('### CSC Error - Connected with casino coin :' + error) );
-    }
+    constructor() { }
     console: any;
 }

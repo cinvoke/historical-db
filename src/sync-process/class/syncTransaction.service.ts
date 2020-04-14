@@ -11,18 +11,26 @@ import * as config from 'yaml-config';
 import { TransactionModifiedDTO } from '../../transactions/dto/transactionModifiedDTO';
 import { paymentTransaction } from './transactions_types/payment';
 import { Accounts } from '../../accounts/entity/account.entity';
+import { Injectable } from '@nestjs/common';
+import { SyncService } from '../services/sync/sync.service';
+import { CasinocoinService } from '../../casinocoin/casinocoin.service';
 const settings = config.readConfig('config.yml');
-export class SyncTransactions {
+
+@Injectable()
+export class SyncTransactionsService {
 
     private cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
     private TransactionsRepository = getRepository(Transactions);
     private AccountsRepository = getRepository(Accounts);
 
-    constructor(lastLedgerVersionCSC: number) {
-        this.initSyncTransactions(lastLedgerVersionCSC);
+    constructor(
+        private casinocoinService: CasinocoinService,
+        private syncService: SyncService,
+    ) {
     }
 
-    private async initSyncTransactions(lastLedgerVersionCSC) {
+    public async initSyncTransactions() {
+        const lastLedgerVersionCSC = this.casinocoinService.getLedgerActually();
         try {
             // Get Last Ledger From DataBase
             const lastLegerVersionAccounts = await this.getLastLedgerAccounts();
@@ -39,7 +47,7 @@ export class SyncTransactions {
         }
     }
 
-    private async initSync(lastLegerVersionAccounts, lastLedgerVersionCSC) {
+    public async initSync(lastLegerVersionAccounts, lastLedgerVersionCSC) {
         // this.syncService.subjectSync.next(true);
         let iterator = lastLegerVersionAccounts;
         console.log('lastLegerVersionAccounts', iterator, 'lastLedgerVersionCSC', lastLedgerVersionCSC);
@@ -139,6 +147,7 @@ export class SyncTransactions {
             }
             // this.syncService.subjectSync.next(false);
             console.log('sync finished');
+            this.syncService.synchNotifier.next(false);
         }).catch((err) => {
             console.log('Error in connected in CasinoCoin Server' + err);
         });
