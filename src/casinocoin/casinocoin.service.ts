@@ -6,7 +6,7 @@ import * as config from 'yaml-config';
 export class CasinocoinService {
 
   private settings;
-  private cscAPI: CasinocoinAPI;
+  public cscAPI: CasinocoinAPI;
 
   constructor() {
     this.settings = config.readConfig('config.yml');

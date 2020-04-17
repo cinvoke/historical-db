@@ -33,7 +33,7 @@ const settings = config.readConfig('config.yml');
       password: settings.database.password,
       database: settings.database.database,
       entities: [Transactions, Accounts, Ledgers, AccountVersions, SpecialAccount],
-      synchronize: true,
+      synchronize: false,
     }),
     AccountsModule,
     TransactionsModule,
@@ -42,7 +42,7 @@ const settings = config.readConfig('config.yml');
     SpecialAccountsModule,
     MorganModule.forRoot(),
     GlobalModule,
-    // SyncModule,
+    SyncModule,
   ],
   controllers: [AppController],
   providers: [

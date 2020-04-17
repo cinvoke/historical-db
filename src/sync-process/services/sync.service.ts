@@ -16,7 +16,7 @@ export class SyncService {
 
   constructor(
     private casinocoinService: CasinocoinService,
-    // public syncTransactionsService: SyncTransactionsService,
+    public syncTransactionsService: SyncTransactionsService,
   ) {
     this.logger.debug('### Init syncTransactionsService');
     this.synchNotifier.subscribe((val: boolean) => {
@@ -30,7 +30,7 @@ export class SyncService {
     }
   }
 
-  @Cron('*/10 * * * * *')
+  @Cron('0 */5 * * * *')
   handleCron() {
     this.logger.debug('###------HANDLE CRONJOB------####');
     if (!this.stateSync) {
@@ -45,7 +45,7 @@ export class SyncService {
       // tslint:disable-next-line:no-unused-expression
       new SyncLedger(this.ledgerActually);
       // tslint:disable-next-line:no-unused-expression
-      // this.syncTransactionsService.initSyncTransactions();
+      this.syncTransactionsService.initSyncTransactions();
   }
 
 }
