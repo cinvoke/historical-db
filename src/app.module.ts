@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { LedgersModule } from './ledgers/ledgers.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AccountsModule } from './accounts/accounts.module';
-import { TransactionsModule } from './transactions/transactions';
+import { TransactionsModule } from './transactions/transactions.module';
 import { Accounts } from './accounts/entity/account.entity';
 import { Transactions } from './transactions/entity/transaction.entity';
 import { Ledgers } from './ledgers/entity/ledger.entity';
@@ -24,6 +24,7 @@ const settings = config.readConfig('config.yml');
 
 @Module({
   imports: [
+    GlobalModule,
     LedgersModule,
     TypeOrmModule.forRoot({
       type: settings.database.type,
@@ -41,7 +42,6 @@ const settings = config.readConfig('config.yml');
     ScheduleModule.forRoot(),
     SpecialAccountsModule,
     MorganModule.forRoot(),
-    GlobalModule,
     SyncModule,
   ],
   controllers: [AppController],

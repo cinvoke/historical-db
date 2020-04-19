@@ -41,6 +41,7 @@ export class CasinocoinService {
   async getLedgerActually() {
     try {
       const ledgerActually = await this.cscAPI.getLedgerVersion();
+      console.log('ledgerActually', ledgerActually);
       if (!ledgerActually) { return null; }
       return ledgerActually;
     } catch (error) {

@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { CasinocoinAPI } from '@casinocoin/libjs';
-import * as config from 'yaml-config';
 import { SyncLedger } from '../class/syncLedgers';
 import { Subject } from 'rxjs';
-import { CasinocoinService } from '../../casinocoin/casinocoin.service';
-import { SyncTransactionsService } from './syncTransaction.service';
+import { TransactionsService } from '../../transactions/services/transactions.service';
+import * as config from 'yaml-config';
+import { CasinocoinAPI } from '@casinocoin/libjs';
+const settings = config.readConfig('config.yml');
 @Injectable()
 export class SyncService {
 
@@ -13,39 +13,53 @@ export class SyncService {
   public stateSync = false;
   private readonly logger = new Logger(SyncService.name);
   public ledgerActually: number;
+  private cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
 
   constructor(
-    private casinocoinService: CasinocoinService,
-    public syncTransactionsService: SyncTransactionsService,
+    private readonly syncService: SyncService,
+    private readonly transactionsService: TransactionsService,
+
   ) {
+    this.cscApi.connect().then(() => {
+
+      this.cscApi.on('ledger', ledger => {
+        this.logger.debug('### CSC Ledger' + JSON.stringify(ledger, null, 2));
+        this.listenLedger(ledger);
+      });
+
+    });
+
     this.logger.debug('### Init syncTransactionsService');
     this.synchNotifier.subscribe((val: boolean) => {
-      this.stateSync = val;
       console.log(val);
+      this.stateSync = val;
+      this.logger.debug('### State Synchronize ==> change state' + this.stateSync);
     });
     if (!this.stateSync) {
-      this.logger.debug('### Init process Synchronize init');
+      this.logger.debug('### State Synchronize ==> In Process');
       this.execSync();
       this.stateSync = true;
     }
   }
 
-  @Cron('0 */5 * * * *')
+  @Cron('0 */15 * * * *')
   handleCron() {
     this.logger.debug('###------HANDLE CRONJOB------####');
     if (!this.stateSync) {
-      this.logger.debug('### Init process Synchronize Cronjob');
+      this.logger.debug('### Init process Synchronize with Cronjob');
       this.execSync();
     }
   }
 
   async execSync() {
-    // get Ledger Actually
-      this.ledgerActually = await this.casinocoinService.getLedgerActually();
-      // tslint:disable-next-line:no-unused-expression
-      new SyncLedger(this.ledgerActually);
-      // tslint:disable-next-line:no-unused-expression
-      this.syncTransactionsService.initSyncTransactions();
+    // tslint:disable-next-line:no-unused-expression
+    // new SyncLedger();
+    // tslint:disable-next-line:no-unused-expression
+    // this.syncTransactionsService.initSyncTransactions();
+  }
+
+  listenLedger(ledger) {
+    console.log(ledger);
   }
 
 }

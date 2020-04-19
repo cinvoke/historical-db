@@ -3,33 +3,41 @@ import { getRepository } from 'typeorm';
 import { CasinocoinAPI } from '@casinocoin/libjs';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 import * as config from 'yaml-config';
+import { Logger } from '@nestjs/common';
 const settings = config.readConfig('config.yml');
 
 export class SyncLedger {
 
     private LedgerRepository = getRepository(Ledgers);
-    private actualLeger;
     private cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
+    private actualLeger;
+    private readonly logger = new Logger(SyncLedger.name);
 
-    constructor(ledger: number) {
-        this.actualLeger = ledger;
+    constructor() {
         this.initSyncLedger();
     }
 
     private async initSyncLedger() {
+        this.logger.debug('### Process Synchronize Ledger');
         try {
             // Get Last Ledger From DataBase
             const LastLedgerDB = await this.getLastLedger();
-            // console.log('LastLedgerDB', LastLedgerDB, 'actualLegerCSC', this.actualLeger);
+            // new instance From CasinoCoin
+            await this.cscApi.connect();
+            // Get Last Ledger From CasinoCoin
+            this.actualLeger = await this.cscApi.getLedgerVersion();
+            this.logger.debug(`### Process Synchronize Ledger ==> LastLedgerDB : ${ LastLedgerDB} - actualLegerCSC: ${ this.actualLeger}`);
 
             // compare Last Ledger with leger actually and init Sync in Database
             if (!LastLedgerDB) { this.initSync(1, this.actualLeger); }
 
             if ( LastLedgerDB >= 1 && LastLedgerDB < this.actualLeger) { this.initSync( LastLedgerDB + 1, this.actualLeger); }
 
-            if (LastLedgerDB > this.actualLeger) { return console.log('Database Is Actualized'); }
+            if (LastLedgerDB > this.actualLeger) {
+                return this.logger.debug('### Process Synchronize Ledger ==> Database Is Actualized');
+            }
         } catch (error) {
-            return console.log('Error initSyncLedger:', error.message);
+            return this.logger.debug('### Process Synchronize Ledger ==> Error: ' + error.message);
         }
     }
 
