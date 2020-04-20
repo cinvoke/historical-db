@@ -8,5 +8,6 @@ import { AccountVersions } from './entity/accountVersion.entity';
   imports : [TypeOrmModule.forFeature([AccountVersions])],
   providers: [AccVersionService],
   controllers: [AccVersionController],
+  exports: [AccVersionService],
 })
 export class AccVersionModule {}

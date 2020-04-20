@@ -5,6 +5,7 @@ import { Accounts } from '../entity/account.entity';
 import { CasinocoinAPI } from '@casinocoin/libjs';
 import { InfoAccountDTO } from '../../sync-process/class/dto/infoAccountDTO';
 import * as config from 'yaml-config';
+import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 const settings = config.readConfig('config.yml');
 
 @Injectable()
@@ -16,8 +17,7 @@ export class AccountsService {
   constructor(
     @InjectRepository(Accounts)
     private readonly accountRepository: Repository<Accounts>,
-  ) {
-  }
+  ) {}
 
   getAll(): Promise<Accounts[]> {
     return this.accountRepository.find();
@@ -35,7 +35,7 @@ export class AccountsService {
     });
   }
 
-  // --------------------------------SyncService---------------------------------------
+  // --------------------------------SyncAccountService---------------------------------------
   public async initSyncAccounts() {
     this.logger.debug('### Process Synchronize Transactions');
     try {
@@ -45,6 +45,7 @@ export class AccountsService {
       // tslint:disable-next-line:max-line-length
       this.logger.debug(`### Process Synchronize Transactions ==>  ActualLegerCSC: ${lastLedgerVersionCSC}`);
 
+      // get Full ledger
       const ledger = await this.cscApi.getLedger({
         ledgerVersion: lastLedgerVersionCSC,
         includeTransactions: true,
@@ -53,31 +54,17 @@ export class AccountsService {
       });
       delete ledger.rawTransactions;
 
+      // convert rawState for to get Accounts
       const rawState = JSON.parse(ledger.rawState);
+      //  Accounts filter
       const accounts = rawState.map((obj) => {
         if (obj.Account) { return obj.Account; }
       }).filter(notUndefined => notUndefined !== undefined);
       console.log(accounts.length);
-      for await (const account of accounts) {
-        const getBalancesLastLedgerAccount = await this.cscApi.getBalances(account);
-        const getInfoLastLedgerAccount: InfoAccountDTO = await this.cscApi.getAccountInfo(account);
-        const kycVersionFinal = getInfoLastLedgerAccount.kycVerified;
 
-        const newAccount = new Accounts();
-        newAccount.accountId = account;
-        newAccount.balances = getBalancesLastLedgerAccount;
-        newAccount.sequence = getInfoLastLedgerAccount.sequence;
-        newAccount.ledgerHash = ledger.ledgerHash;
-        newAccount.ledgerVersion = ledger.ledgerVersion;
-        newAccount.ownerCount = getInfoLastLedgerAccount.ownerCount;
-        newAccount.previousAffectingTransactionID = getInfoLastLedgerAccount.previousAffectingTransactionID;
-        newAccount.previousAffectingTransactionLedgerVersion = getInfoLastLedgerAccount.previousAffectingTransactionLedgerVersion;
-        newAccount.ledgerTimestamp = new Date(ledger.closeTime);
-        newAccount.kyc = kycVersionFinal;
-        newAccount.parent = null;
-        // insert new account
-        await this.accountRepository.save(newAccount);
-        console.log(`insert account ${account}`);
+      for await (const account of accounts) {
+        // save account
+        await this.saveAccount(account, ledger, this.cscApi, null); // TODO: Verify previousInitiatedTransactionID
       }
       if (lastLedgerVersionCSC) {
         return this.logger.debug('### Process Synchronize Transactions ==> Finished');
@@ -85,5 +72,40 @@ export class AccountsService {
     } catch (error) {
       return this.logger.debug('### Process Synchronize Transactions ==> Error: ' + error.message);
     }
+  }
+
+  public async  saveAccountsListenLedger(transaction, ledger: LedgerDto,  cscApi: CasinocoinAPI) {
+    // tslint:disable-next-line:forin
+    for (const accountId in transaction.outcome.balanceChanges) {
+      try {
+        await this.saveAccount(accountId, ledger, cscApi, transaction.id);
+      } catch (error) {
+        console.log(`Error saveAccountsListenLedger: ${accountId}`, error);
+      }
+    }
+  }
+
+  // tslint:disable-next-line:max-line-length
+  public async saveAccount(account, ledger, cscApi, txId) {
+    const getBalancesLastLedgerAccount = await cscApi.getBalances(account);
+    const getInfoLastLedgerAccount: InfoAccountDTO = await cscApi.getAccountInfo(account);
+    const kycVersionFinal = getInfoLastLedgerAccount.kycVerified;
+
+    const newAccount = new Accounts();
+    newAccount.accountId = account;
+    newAccount.balances = getBalancesLastLedgerAccount;
+    newAccount.sequence = getInfoLastLedgerAccount.sequence;
+    newAccount.ledgerHash = ledger.ledgerHash;
+    newAccount.ledgerVersion = ledger.ledgerVersion;
+    newAccount.ownerCount = getInfoLastLedgerAccount.ownerCount;
+    newAccount.previousAffectingTransactionID = getInfoLastLedgerAccount.previousAffectingTransactionID;
+    newAccount.previousAffectingTransactionLedgerVersion = getInfoLastLedgerAccount.previousAffectingTransactionLedgerVersion;
+    newAccount.previousInitiatedTransactionID = txId;
+    newAccount.ledgerTimestamp = new Date(ledger.closeTime);
+    newAccount.kyc = kycVersionFinal;
+    newAccount.parent = null;
+    // insert new account
+    await this.accountRepository.save(newAccount);
+    console.log(`insert account ${account}`);
   }
 }

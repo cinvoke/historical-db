@@ -4,9 +4,9 @@ import { Repository } from 'typeorm';
 import { Transactions } from '../entity/transaction.entity';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 import { TransactionModifiedDTO } from '../dto/transactionModifiedDTO';
-import { SyncService } from '../../sync-process/services/sync.service';
 import { InfoAccountDTO } from '../../sync-process/class/dto/infoAccountDTO';
 import { AccVersionService } from '../../account-version/services/acc-version.service';
+import { CasinocoinAPI } from '@casinocoin/libjs';
 
 @Injectable()
 export class TransactionsService {
@@ -15,9 +15,8 @@ export class TransactionsService {
   constructor(
     @InjectRepository(Transactions)
     private readonly transactionRepository: Repository<Transactions>,
-    private readonly syncService: SyncService,
     private readonly accVersionService: AccVersionService,
-  ) {}
+  ) { }
 
   async getAll(): Promise<Transactions[]> {
     return await this.transactionRepository.find();
@@ -77,22 +76,25 @@ export class TransactionsService {
 
   // ----------------------------------SyncProcess-----------------------------------------
 
-  public async initSyncTransactions(cscApi) {
+  public async initSyncTransactions(cscApi: CasinocoinAPI) {
     this.logger.debug('### Process Synchronize Transactions');
     try {
       // Get Last Ledger From DataBase
-      const lastLegerTransactions = await this.getLastLegerTransactions();
-      await cscApi.connect();
+      const lastLegerDBTransactions = await this.getLastLegerTransactions();
+      let lastLedgerCSC;
+      if (!lastLegerDBTransactions) {
+        lastLedgerCSC = await cscApi.getLedgerVersion();
+      }
       // Get Last Ledger From CasinoCoin
-      this.logger.debug(`### Process Synchronize Transactions ==> LastLedgerDB : ${ lastLegerTransactions}`);
+      this.logger.debug(`### Process Synchronize Transactions ==> lastLegerDB: ${ lastLegerDBTransactions}, lastLedgerCSC: ${lastLedgerCSC} `);
 
       // compare Last Ledger with leger actually and init Sync in Database
-      if (lastLegerTransactions !== 0) {
-          this.initSync(lastLegerTransactions - 1, cscApi);
-          this.syncService.synchNotifier.next(true);
+      if (lastLegerDBTransactions !== 0) {
+        this.initSync(lastLegerDBTransactions ? lastLegerDBTransactions - 1 : lastLedgerCSC, cscApi);
+        // this.syncService.synchNotifier.next(true);
       }
 
-      if (lastLegerTransactions === 0) {
+      if (lastLegerDBTransactions === 0) {
           return this.logger.debug('### Process Synchronize Transactions ==> Database Is Actualized');
       }
     } catch (error) {
@@ -100,91 +102,97 @@ export class TransactionsService {
     }
   }
 
-    public async initSync(lastLegerVersionAccounts, cscApi) {
-      let iterator = lastLegerVersionAccounts;
-      while (iterator === 0) {
-        try {
-          const LedgerFinder: LedgerDto = await cscApi.getLedger({
-              ledgerVersion: iterator,
-              includeTransactions: true,
-              includeAllData: true,
-              includeState: true,
-          });
-
-          if (LedgerFinder.transactions) {
-            // loop for every transactionCheck
-            let transaction: any;
-            for await (transaction of LedgerFinder.transactions) {
-              console.log(`---------------------ledger-${iterator}------------------------` );
-              // Object Transaction Modified
-              const transactionModified: TransactionModifiedDTO = {
-                ledgerHash: LedgerFinder.ledgerHash,
-                ledgerVersion: LedgerFinder.ledgerVersion,
-                ledgerTimestamp: LedgerFinder.closeTime,
-                accountId : transaction.address,
-                ...transaction,
-              };
-              // Insert the transaction
-              await this.transactionRepository.insert(transactionModified);
-
-              // send tx modified for add accounts
-              if (transaction.type === 'payment') { // OK
-                  // sync VersionAccount
-                  await this.modifiedTransaction(transactionModified, cscApi);
-              }
-
-              if (transaction.type === 'setCRNRound') { //
-                console.log('transaction type SetCRNRound ledger:' + iterator);
-                // sync VersionAccount
-                await this.modifiedTransaction(transactionModified, cscApi);
-              }
-
-              if (transaction.type === 'kycSet') { // OK
-                console.log('transaction type KYCSet ledger:' + iterator);
-                // sync VersionAccount
-                await this.modifiedTransaction(transactionModified, cscApi);
-              }
-
-              if (transaction.type === 'trustline') { // OK
-                console.log('transaction type trustline ledger:' + iterator);
-                // sync VersionAccount
-                await this.modifiedTransaction(transactionModified, cscApi);
-              }
-
-              if (transaction.type === 'AccountSet') {
-                console.log('transaction type AccountSet ledger:' + iterator);
-                // sync VersionAccount
-                this.setAccountTransaction(transaction);
-              }
-
-              if (transaction.type === 'feeUpdate') { // OK
-                console.log('transaction type AccountSet ledger:' + iterator);
-                this.setAccountTransaction(transaction);
-              }
-            }
-          }
-          iterator--;
-        } catch (error) {
-          console.log('Error in initSync', error.message + ' Nº:' + iterator, error);
-          iterator++;
-        }
-      }
-      return this.logger.debug('### Process Synchronize Transactions ==> sync finished');
-      this.syncService.synchNotifier.next(false);
-    }
-    // get last ledgerVersion from database
-    private getLastLegerTransactions = async () => {
+  public async initSync(lastLegerVersionAccounts, cscApi) {
+    let iterator = lastLegerVersionAccounts;
+    while (iterator !== 0) {
       try {
-        const sequenceSource: any = await this.transactionRepository
-            .createQueryBuilder('A')
-            .select('MIN(A.ledgerVersion)', 'min')
-            .getRawOne();
-        return sequenceSource.min;
-      } catch (err) {
-          console.log('Error get lastLedgerVersion on DataBase');
-          return null;
+        const LedgerFinder: LedgerDto = await cscApi.getLedger({
+            ledgerVersion: iterator,
+            includeTransactions: true,
+            includeAllData: true,
+            includeState: true,
+        });
+
+        if (LedgerFinder.transactions) {
+          // loop for every transactionCheck
+          await this.processTx(LedgerFinder, cscApi);
+        }
+        iterator--;
+      } catch (error) {
+        console.log('Error in initSync', error.message + ' Nº:' + iterator, error);
+        iterator--;
       }
     }
+    return this.logger.debug('### Process Synchronize Transactions ==> sync finished');
+    // this.syncService.synchNotifier.next(false);
+  }
+
+  public async processTx(LedgerFinder: LedgerDto, cscApi) {
+    let transaction: any;
+    for await (transaction of LedgerFinder.transactions) {
+      console.log(`---------------------ledger-${LedgerFinder.ledgerVersion}------------------------` );
+      // Object Transaction Modified
+      const transactionModified: TransactionModifiedDTO = {
+        ledgerHash: LedgerFinder.ledgerHash,
+        ledgerVersion: LedgerFinder.ledgerVersion,
+        ledgerTimestamp: LedgerFinder.closeTime,
+        accountId : transaction.address,
+        ...transaction,
+      };
+      // Insert the transaction
+      await this.transactionRepository.insert(transactionModified);
+
+      // send tx modified for add accounts
+      if (transaction.type === 'payment') { // OK
+          // sync VersionAccount
+          await this.modifiedTransaction(transactionModified, cscApi);
+      }
+
+      if (transaction.type === 'setCRNRound') { //
+        console.log('transaction type SetCRNRound ledger:' + LedgerFinder.ledgerVersion);
+        // sync VersionAccount
+        await this.modifiedTransaction(transactionModified, cscApi);
+      }
+
+      if (transaction.type === 'kycSet') { // OK
+        console.log('transaction type KYCSet ledger:' + LedgerFinder.ledgerVersion);
+        // sync VersionAccount
+        await this.modifiedTransaction(transactionModified, cscApi);
+      }
+
+      if (transaction.type === 'trustline') { // OK
+        console.log('transaction type trustline ledger:' + LedgerFinder.ledgerVersion);
+        // sync VersionAccount
+        await this.modifiedTransaction(transactionModified, cscApi);
+      }
+
+      if (transaction.type === 'AccountSet') {
+        console.log('transaction type AccountSet ledger:' + LedgerFinder.ledgerVersion);
+        // sync VersionAccount
+        this.setAccountTransaction(transaction);
+      }
+
+      if (transaction.type === 'feeUpdate') { // OK
+        console.log('transaction type AccountSet ledger:' + LedgerFinder.ledgerVersion);
+        this.setAccountTransaction(transaction);
+      }
+    }
+  }
+
+
+  // get last ledgerVersion from database
+  private getLastLegerTransactions = async () => {
+    try {
+      const sequenceSource: any = await this.transactionRepository
+          .createQueryBuilder('A')
+          .select('MIN(A.ledgerVersion)', 'min')
+          .getRawOne();
+      return sequenceSource.min;
+    } catch (err) {
+        console.log('Error get lastLedgerVersion on DataBase');
+        return null;
+    }
+  }
 
   async modifiedTransaction(transaction: TransactionModifiedDTO, cscApi) {
     const ledger = transaction.ledgerVersion;
@@ -211,8 +219,6 @@ export class TransactionsService {
       }
     }
   }
-  
-  async setAccountTransaction(transaction) {
 
-  }
+  async setAccountTransaction(transaction) { }
 }
