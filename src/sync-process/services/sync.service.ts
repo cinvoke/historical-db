@@ -8,7 +8,6 @@ import { CasinocoinAPI } from '@casinocoin/libjs';
 import { AccountsService } from '../../accounts/services/accounts.service';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 import { LedgersService } from '../../ledgers/services/ledgers.service';
-import { TransactionModifiedDTO } from '../../transactions/dto/transactionModifiedDTO';
 const settings = config.readConfig('config.yml');
 @Injectable()
 export class SyncService {
@@ -33,8 +32,11 @@ export class SyncService {
         this.listenLedger(ledger.ledgerVersion);
       });
       // init Process Synchronize
+      // sync Ledgers
       this.ledgersService.initSyncLedger(this.cscApi);
+      // sync transactions
       this.transactionsService.initSyncTransactions(this.cscApi);
+      // sync raw Accounts
       this.accountsService.initSyncAccounts();
     });
 

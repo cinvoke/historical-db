@@ -7,6 +7,8 @@ import { TransactionModifiedDTO } from '../dto/transactionModifiedDTO';
 import { InfoAccountDTO } from '../../sync-process/class/dto/infoAccountDTO';
 import { AccVersionService } from '../../account-version/services/acc-version.service';
 import { CasinocoinAPI } from '@casinocoin/libjs';
+import { Accounts } from '../../accounts/entity/account.entity';
+import { AccountsService } from '../../accounts/services/accounts.service';
 
 @Injectable()
 export class TransactionsService {
@@ -15,7 +17,10 @@ export class TransactionsService {
   constructor(
     @InjectRepository(Transactions)
     private readonly transactionRepository: Repository<Transactions>,
+    @InjectRepository(Accounts)
+    private readonly accountRepository: Repository<Accounts>,
     private readonly accVersionService: AccVersionService,
+    private readonly accountsService: AccountsService,
   ) { }
 
   async getAll(): Promise<Transactions[]> {
@@ -179,7 +184,6 @@ export class TransactionsService {
     }
   }
 
-
   // get last ledgerVersion from database
   private getLastLegerTransactions = async () => {
     try {
@@ -202,15 +206,37 @@ export class TransactionsService {
       id: transaction.id,
       ledgerHash: transaction.ledgerHash,
       ledgerTimestamp: transaction.ledgerTimestamp,
-      parent: transaction.specification.source.address,
+      parent: null,
     };
 
     // tslint:disable-next-line:forin
     for (const accountId in transaction.outcome.balanceChanges) {
       try {
+
         const getInfoAccount: InfoAccountDTO = await cscApi.getAccountInfo(accountId, { ledgerVersion: ledger });
         const kycVersionLedger = getInfoAccount.kycVerified;
         const getBalancesAccount = await cscApi.getBalances(accountId, { ledgerVersion: ledger });
+
+        // if account sequence is equal to 1 the parent account is transaction account
+        if (getInfoAccount.sequence === 1) {
+          elements.parent = transaction.accountId;
+          const findAccount = await this.accountRepository.findOne({ accountId });
+
+          if (!findAccount) {
+            const ledgerObj = {
+              closeTime: elements.ledgerTimestamp,
+              ledgerHash: elements.ledgerHash,
+              ledgerVersion: elements.ledger,
+            };
+            this.logger.debug('### send Accout with parent' + accountId);
+            await this.accountsService.saveAccount(accountId, ledgerObj, cscApi, transaction.id, transaction.accountId);
+          }
+
+          if (findAccount) {
+            findAccount.parent = transaction.accountId;
+            await this.accountRepository.save(findAccount);
+          }
+        }
 
         await this.accVersionService.insertNewAccountVersion(accountId, getBalancesAccount, getInfoAccount, elements, kycVersionLedger);
 
