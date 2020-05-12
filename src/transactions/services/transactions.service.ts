@@ -34,9 +34,18 @@ export class TransactionsService {
     return findTx;
   }
 
-  async findTxMe(account) {
+  // transaction
+  async findTxMakeAccount(account) {
     return await this.transactionRepository.query(`
       SELECT *
+      FROM transactions
+      WHERE specification -> 'source' ->> 'address' = '${account}'
+    `);
+  }
+
+  async findTxMeCount(account) {
+    return await this.transactionRepository.query(`
+      SELECT COUNT(*)
       FROM transactions
       WHERE specification -> 'source' ->> 'address' = '${account}'
     `);
@@ -50,24 +59,15 @@ export class TransactionsService {
     `);
   }
 
-  async getLimitedTransactions(body) {
-    const { skip, take } = body;
-    return await this.transactionRepository.createQueryBuilder('transactions')
-      .select()
-      .skip(skip) // number of tx to skip first
-      .take(take) // take number tx
-      .getMany();
-  }
-
-  async getLengthTransactions(account) {
-    return await this.transactionRepository.createQueryBuilder('transactions')
-    .select('SUM(transactions.accountId)', 'sum')
-    .where('transactions.accountId = :accountId', { accountId: account })
-    .getRawOne();
-      // .select()
-      // .where('transactions.accountId = :accountId', { accountId: account })
-      // .c
-  }
+  // async getLengthTransactions(account) {
+  //   return await this.transactionRepository.createQueryBuilder('transactions')
+  //   .select('SUM(transactions.accountId)', 'sum')
+  //   .where('transactions.accountId = :accountId', { accountId: account })
+  //   .getRawOne();
+  //     // .select()
+  //     // .where('transactions.accountId = :accountId', { accountId: account })
+  //     // .c
+  // }
 
   async getLimitedTransactionsByAccount(body) {
     const { skip, take, account } = body;
