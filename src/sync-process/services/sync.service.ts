@@ -74,11 +74,10 @@ export class SyncService {
     // saved transaction
     if (LedgerFinder.transactions) {
       await this.transactionsService.processTx(LedgerFinder, this.cscApi);
-    }
-
-    // saved Accounts
-    for await (const transaction of LedgerFinder.transactions) {
-      await this.accountsService.saveAccountsListenLedger(transaction, LedgerFinder,  this.cscApi);
+      // saved Accounts
+      for await (const transaction of LedgerFinder.transactions) {
+        await this.accountsService.saveAccountsListenLedger(transaction, LedgerFinder,  this.cscApi);
+      }
     }
   }
 
