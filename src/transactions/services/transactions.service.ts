@@ -47,7 +47,7 @@ export class TransactionsService {
     return await this.transactionRepository.query(`
       SELECT COUNT(*)
       FROM transactions
-      WHERE specification -> 'source' ->> 'address' = '${account}'
+      WHERE "accountId" = '${account}'
     `);
   }
 
@@ -59,21 +59,10 @@ export class TransactionsService {
     `);
   }
 
-  // async getLengthTransactions(account) {
-  //   return await this.transactionRepository.createQueryBuilder('transactions')
-  //   .select('SUM(transactions.accountId)', 'sum')
-  //   .where('transactions.accountId = :accountId', { accountId: account })
-  //   .getRawOne();
-  //     // .select()
-  //     // .where('transactions.accountId = :accountId', { accountId: account })
-  //     // .c
-  // }
-
   async getLimitedTransactionsByAccount(body) {
     const { skip, take, account } = body;
-    console.log( { skip, take, account });
     return await this.transactionRepository.createQueryBuilder('transactions')
-      .where('transactions.accountId = :accountId', { accountId: account })
+      .where('transactions.accountId = :account', { account })
       .skip(skip) // number of tx to skip first
       .take(take) // take number tx
       .getMany();
