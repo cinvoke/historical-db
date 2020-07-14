@@ -1,19 +1,18 @@
 import { Ledgers} from '../../ledgers/entity/ledger.entity';
 import { getRepository } from 'typeorm';
-import { CasinocoinAPI } from '@casinocoin/libjs';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
-import * as config from 'yaml-config';
 import { Logger } from '@nestjs/common';
-const settings = config.readConfig('config.yml');
+import { CasinocoinService } from '../../casinocoin/casinocoin.service';
 
 export class SyncLedger {
 
     private LedgerRepository = getRepository(Ledgers);
-    private cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
     private actualLeger;
     private readonly logger = new Logger(SyncLedger.name);
+    private initRunning: boolean;
 
-    constructor() {
+    constructor( private casinocoinService: CasinocoinService) {
+        this.initRunning = false;
         this.initSyncLedger();
     }
 
@@ -23,9 +22,9 @@ export class SyncLedger {
             // Get Last Ledger From DataBase
             const LastLedgerDB = await this.getLastLedger();
             // new instance From CasinoCoin
-            await this.cscApi.connect();
+            await this.casinocoinService.cscAPI.connect();
             // Get Last Ledger From CasinoCoin
-            this.actualLeger = await this.cscApi.getLedgerVersion();
+            this.actualLeger = await this.casinocoinService.cscAPI.getLedgerVersion();
             this.logger.debug(`### Process Synchronize Ledger ==> LastLedgerDB : ${ LastLedgerDB} - actualLegerCSC: ${ this.actualLeger}`);
 
             // compare Last Ledger with leger actually and init Sync in Database
@@ -44,26 +43,28 @@ export class SyncLedger {
     private initSync( initLedgerVersion: number, LastLegerVersion: number) {
         let iterator: number = initLedgerVersion;
         const ledgerVersionNotFound: number[] = [];
-        this.cscApi.connect().then(async () => {
-            while (iterator < LastLegerVersion) {
-                // console.log('iterator', iterator, 'LastLegerVersion', LastLegerVersion);
-                try {
-                    const LedgerFinder: LedgerDto = await this.cscApi.getLedger({
-                        ledgerVersion: iterator, includeTransactions: true, includeAllData: true, includeState: true,
-                    });
-                    const transactionCount = LedgerFinder.transactions ? LedgerFinder.transactions.length : 0;
-                    if (LedgerFinder) { await this.savedLedger({ status: 'OK', ledgerVersion: iterator, transactionCount, ...LedgerFinder }); }
-                    iterator++;
-                } catch (error) {
-                    ledgerVersionNotFound.push(iterator);
-                    console.log('Ledger not found Nº:' + iterator + error.message);
-                    await this.savedLedger({ status: 'Missing', ledgerVersion: iterator });
-                    iterator++;
+        this.casinocoinService.serverConnectedSubject.subscribe( async connected => {
+            if (connected && !this.initRunning) {
+                this.initRunning = true;
+                while (iterator < LastLegerVersion) {
+                    // console.log('iterator', iterator, 'LastLegerVersion', LastLegerVersion);
+                    try {
+                        const LedgerFinder: LedgerDto = await this.casinocoinService.cscAPI.getLedger({
+                            ledgerVersion: iterator, includeTransactions: true, includeAllData: true, includeState: true,
+                        });
+                        const transactionCount = LedgerFinder.transactions ? LedgerFinder.transactions.length : 0;
+                        if (LedgerFinder) { await this.savedLedger({ status: 'OK', ledgerVersion: iterator, transactionCount, ...LedgerFinder }); }
+                        iterator++;
+                    } catch (error) {
+                        ledgerVersionNotFound.push(iterator);
+                        console.log('Ledger not found Nº:' + iterator + error.message);
+                        await this.savedLedger({ status: 'Missing', ledgerVersion: iterator });
+                        iterator++;
+                    }
                 }
+                this.initRunning = false;
             }
             console.log('ledgerVersionNotFound', ledgerVersionNotFound);
-        }).catch((err) => {
-            console.log('Error in connected in CasinoCoin Server' + err);
         });
     }
 

@@ -2,22 +2,25 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Accounts } from '../entity/account.entity';
-import { CasinocoinAPI } from '@casinocoin/libjs';
 import { InfoAccountDTO } from '../../sync-process/class/dto/infoAccountDTO';
 import * as config from 'yaml-config';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
+import { CasinocoinService } from '../../casinocoin/casinocoin.service';
 const settings = config.readConfig('config.yml');
 
 @Injectable()
 export class AccountsService {
 
-  private cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
   private readonly logger = new Logger(AccountsService.name);
+  private initRunning: boolean;
 
   constructor(
     @InjectRepository(Accounts)
     private readonly accountRepository: Repository<Accounts>,
-  ) {}
+    private casinocoinService: CasinocoinService,
+  ) {
+    this.initRunning = false;
+  }
 
   getAll(): Promise<Accounts[]> {
     return this.accountRepository.find();
@@ -28,54 +31,57 @@ export class AccountsService {
   }
 
   async getTokens() {
-    this.cscApi.connect().then((value) => {
-      this.cscApi.getConfigInfo('Token').then(configResult => {
+    this.casinocoinService.cscAPI.getConfigInfo('Token').then(configResult => {
         console.log('configResult', configResult);
-      });
     });
   }
 
   // --------------------------------SyncAccountService---------------------------------------
   public async initSyncAccounts() {
-    this.logger.debug('### Process Synchronize Transactions');
-    try {
-      await this.cscApi.connect();
-      // Get Last Ledger From CasinoCoin
-      const lastLedgerVersionCSC = await this.cscApi.getLedgerVersion();
-      // tslint:disable-next-line:max-line-length
-      this.logger.debug(`### Process Synchronize Transactions ==>  ActualLegerCSC: ${lastLedgerVersionCSC}`);
+    this.logger.debug('### Process Synchronize Accounts');
+    this.casinocoinService.serverConnectedSubject.subscribe( async connected => {
+      if (connected && !this.initRunning) {
+          this.initRunning = true;
+          try {
+            // Get Last Ledger From CasinoCoin
+            const lastLedgerVersionCSC = await this.casinocoinService.cscAPI.getLedgerVersion();
+            // tslint:disable-next-line:max-line-length
+            this.logger.debug(`### Process Synchronize Accounts ==>  ActualLegerCSC: ${lastLedgerVersionCSC}`);
 
-      // get Full ledger
-      const ledger = await this.cscApi.getLedger({
-        ledgerVersion: lastLedgerVersionCSC,
-        includeTransactions: true,
-        includeAllData: true,
-        includeState: true,
-      });
-      delete ledger.rawTransactions;
+            // get Full ledger
+            const ledger = await this.casinocoinService.cscAPI.getLedger({
+              ledgerVersion: lastLedgerVersionCSC,
+              includeTransactions: true,
+              includeAllData: true,
+              includeState: true,
+            });
+            delete ledger.rawTransactions;
 
-      // convert rawState for to get Accounts
-      const rawState = JSON.parse(ledger.rawState);
-      //  Accounts filter
-      const accounts = rawState.map((obj) => {
-        if (obj.Account) { return obj.Account; }
-      }).filter(notUndefined => notUndefined !== undefined);
-      console.log(accounts.length);
+            // convert rawState for to get Accounts
+            const rawState = JSON.parse(ledger.rawState);
+            //  Accounts filter
+            const accounts = rawState.map((obj) => {
+              if (obj.Account) { return obj.Account; }
+            }).filter(notUndefined => notUndefined !== undefined);
+            console.log(accounts.length);
 
-      for await (const account of accounts) {
-        // save account
-        await this.saveAccount(account, ledger, this.cscApi, null , null);
-      }
-      if (lastLedgerVersionCSC) {
-        return this.logger.debug('### Process Synchronize Transactions ==> Finished');
-      }
-    } catch (error) {
-      return this.logger.debug('### Process Synchronize Transactions ==> Error: ' + error.message);
-    }
+            for await (const account of accounts) {
+              // save account
+              await this.saveAccount(account, ledger, this.casinocoinService.cscAPI, null , null);
+            }
+            if (lastLedgerVersionCSC) {
+              return this.logger.debug('### Process Synchronize Accounts ==> Finished');
+            }
+          } catch (error) {
+            return this.logger.debug('### Process Synchronize Accounts ==> Error: ' + error.message);
+          }
+          this.initRunning = false;
+        }
+    });
   }
 
   // save account from listener Leger
-  public async  saveAccountsListenLedger(transaction, ledger: LedgerDto,  cscApi: CasinocoinAPI) {
+  public async  saveAccountsListenLedger(transaction, ledger: LedgerDto,  cscApi: any) {
     // tslint:disable-next-line:forin
     for (const accountId in transaction.outcome.balanceChanges) {
       try {

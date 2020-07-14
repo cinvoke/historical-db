@@ -1,15 +1,16 @@
 import { Controller, Get, Res, HttpStatus, Param, Body, HttpException } from '@nestjs/common';
 import { AccountsService } from '../services/accounts.service';
+import { CasinocoinService } from '../../casinocoin/casinocoin.service';
 import { Account } from '../class/Account';
-import { CasinocoinAPI } from '@casinocoin/libjs';
 import * as config from 'yaml-config';
 const settings = config.readConfig('config.yml');
 
 @Controller('accounts')
 export class AccountsController {
-    private cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
+
     constructor(
         private accountsService: AccountsService,
+        private casinocoinService: CasinocoinService,
     ) { }
 
     @Get('')
@@ -29,12 +30,10 @@ export class AccountsController {
 
     @Get('tokens')
     getAllTransactions(@Res() response) {
-        this.cscApi.connect().then( () => {
-            this.cscApi.getConfigInfo('Token').then((tokens: any) => {
-                if (tokens) {
-                    response.status(HttpStatus.OK).json(tokens);
-                }
-            });
+        this.casinocoinService.cscAPI.getConfigInfo('Token').then((tokens: any) => {
+            if (tokens) {
+                response.status(HttpStatus.OK).json(tokens);
+            }
         }).catch((err) => {
             throw new HttpException({
                 status: HttpStatus.BAD_REQUEST,

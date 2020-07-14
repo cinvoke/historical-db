@@ -4,11 +4,12 @@ import { SyncLedger } from '../class/syncLedgers';
 import { Subject } from 'rxjs';
 import { TransactionsService } from '../../transactions/services/transactions.service';
 import * as config from 'yaml-config';
-import { CasinocoinAPI } from '@casinocoin/libjs';
 import { AccountsService } from '../../accounts/services/accounts.service';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 import { LedgersService } from '../../ledgers/services/ledgers.service';
+import { CasinocoinService } from '../../casinocoin/casinocoin.service';
 const settings = config.readConfig('config.yml');
+
 @Injectable()
 export class SyncService {
 
@@ -16,28 +17,29 @@ export class SyncService {
   public stateSync = false;
   private readonly logger = new Logger(SyncService.name);
   public ledgerActually: number;
-  private cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
-
+  
   constructor(
+    private casinocoinService: CasinocoinService,
     private readonly transactionsService: TransactionsService,
     private readonly accountsService: AccountsService,
     private readonly ledgersService: LedgersService,
   ) {
     this.logger.debug('### Init SyncGlobalService');
-    // connect width casinocoin
-    this.cscApi.connect().then(() => {
-      // listen new Ledger
-      this.cscApi.on('ledger', ledger => {
-        this.logger.debug('### CSC Ledger' + JSON.stringify(ledger, null, 2));
-        this.listenLedger(ledger.ledgerVersion);
-      });
-      // init Process Synchronize
-      // sync Ledgers
-      this.ledgersService.initSyncLedger(this.cscApi);
-      // sync transactions
-      this.transactionsService.initSyncTransactions(this.cscApi);
-      // sync raw Accounts
-      this.accountsService.initSyncAccounts();
+    this.casinocoinService.serverConnectedSubject.subscribe( connected => {
+      if (connected) {
+        // listen for new Ledgers
+        this.casinocoinService.cscAPI.on('ledger', ledger => {
+          this.logger.debug('### CSC Ledger: ' + ledger.ledgerVersion);
+          this.listenLedger(ledger.ledgerVersion);
+        });
+        // init Process Synchronize
+        // sync Ledgers
+        this.ledgersService.initSyncLedger(this.casinocoinService.cscAPI);
+        // sync transactions
+        this.transactionsService.initSyncTransactions(this.casinocoinService.cscAPI);
+        // sync raw Accounts
+        this.accountsService.initSyncAccounts();
+      }
     });
 
     this.synchNotifier.subscribe((val: boolean) => {
@@ -57,10 +59,8 @@ export class SyncService {
   }
 
   async listenLedger(ledgerVersion) {
-    console.log(ledgerVersion);
-
     // saved ledger
-    const LedgerFinder: LedgerDto = await this.cscApi.getLedger({
+    const LedgerFinder: LedgerDto = await this.casinocoinService.cscAPI.getLedger({
       ledgerVersion,
       includeTransactions: true,
       includeAllData: true,
@@ -73,10 +73,10 @@ export class SyncService {
 
     // saved transaction
     if (LedgerFinder.transactions) {
-      await this.transactionsService.processTx(LedgerFinder, this.cscApi);
+      await this.transactionsService.processTx(LedgerFinder, this.casinocoinService.cscAPI);
       // saved Accounts
       for await (const transaction of LedgerFinder.transactions) {
-        await this.accountsService.saveAccountsListenLedger(transaction, LedgerFinder,  this.cscApi);
+        await this.accountsService.saveAccountsListenLedger(transaction, LedgerFinder,  this.casinocoinService.cscAPI);
       }
     }
   }

@@ -11,4 +11,3 @@ import { CasinocoinService } from '../casinocoin/casinocoin.service';
   ],
 })
 export class GlobalModule {}
-

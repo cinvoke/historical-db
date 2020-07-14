@@ -34,7 +34,7 @@ const settings = config.readConfig('config.yml');
       password: settings.database.password,
       database: settings.database.database,
       entities: [Transactions, Accounts, Ledgers, AccountVersions, SpecialAccount],
-      synchronize: false,
+      synchronize: true,
     }),
     AccountsModule,
     TransactionsModule,

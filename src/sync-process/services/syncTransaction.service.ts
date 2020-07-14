@@ -2,63 +2,65 @@ import { setAccountTransaction } from '../class/transactions_types/accountSet';
 import { trustTransaction } from '../class/transactions_types/trustSet';
 import { kycTransaction } from '../class/transactions_types/kycSet';
 import { crnTransaction } from '../class/transactions_types/SetCRNRound';
-import { getRepository, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Transactions } from '../../transactions/entity/transaction.entity';
 import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 
-import { CasinocoinAPI } from '@casinocoin/libjs';
 import { TransactionModifiedDTO } from '../../transactions/dto/transactionModifiedDTO';
 import { paymentTransaction } from '../class/transactions_types/payment';
-import { Accounts } from '../../accounts/entity/account.entity';
 import { Injectable, Logger } from '@nestjs/common';
-import { SyncService } from './sync.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as config from 'yaml-config';
-const settings = config.readConfig('config.yml');
+import { CasinocoinService } from '../../casinocoin/casinocoin.service';
 
 @Injectable()
 export class SyncTransactionsService {
 
-    private cscApi: CasinocoinAPI = new CasinocoinAPI({ server: settings.casinocoinServer });
     // public syncService: SyncService;
     private readonly logger = new Logger(SyncTransactionsService.name);
+    private initRunning: boolean;
 
     constructor(
         @InjectRepository(Transactions)
         private readonly TransactionsRepository: Repository<Transactions>,
+        private casinocoinService: CasinocoinService,
     ) {
+        this.initRunning = false;
     }
 
     public async initSyncTransactions() {
         this.logger.debug('### Process Synchronize Transactions');
-        try {
-            // Get Last Ledger From DataBase
-            const lastLegerVersionAccounts = await this.getLastLedgerAccounts();
-            await this.cscApi.connect();
-            // Get Last Ledger From CasinoCoin
-            const lastLedgerVersionCSC = await this.cscApi.getLedgerVersion();
-            // tslint:disable-next-line:max-line-length
-            this.logger.debug(`### Process Synchronize Transactions ==> LastLedgerDB : ${ lastLegerVersionAccounts} - actualLegerCSC: ${ lastLedgerVersionCSC}`);
+        this.casinocoinService.serverConnectedSubject.subscribe( async connected => {
+            if (connected && !this.initRunning) {
+                this.initRunning = true;
+                try {
+                    // Get Last Ledger From DataBase
+                    const lastLegerVersionAccounts = await this.getLastLedgerAccounts();
+                    const lastLedgerVersionCSC = await this.casinocoinService.cscAPI.getLedgerVersion();
+                    // tslint:disable-next-line:max-line-length
+                    this.logger.debug(`### Process Synchronize Transactions ==> LastLedgerDB : ${ lastLegerVersionAccounts} - actualLegerCSC: ${ lastLedgerVersionCSC}`);
 
-            // compare Last Ledger with leger actually and init Sync in Database
-            if (lastLegerVersionAccounts >= 1 && lastLegerVersionAccounts < lastLedgerVersionCSC) {
-                this.initSync(lastLegerVersionAccounts + 1, lastLedgerVersionCSC);
-                // this.syncService.synchNotifier.next(true);
-            }
+                    // compare Last Ledger with leger actually and init Sync in Database
+                    if (lastLegerVersionAccounts >= 1 && lastLegerVersionAccounts < lastLedgerVersionCSC) {
+                        this.initSync(lastLegerVersionAccounts + 1, lastLedgerVersionCSC);
+                        // this.syncService.synchNotifier.next(true);
+                    }
 
-            if (lastLegerVersionAccounts > lastLedgerVersionCSC) {
-                return this.logger.debug('### Process Synchronize Transactions ==> Database Is Actualized');
+                    if (lastLegerVersionAccounts > lastLedgerVersionCSC) {
+                        return this.logger.debug('### Process Synchronize Transactions ==> Database Is Actualized');
+                    }
+                } catch (error) {
+                    return this.logger.debug('### Process Synchronize Transactions ==> Error: ' + error.message);
+                }
+                this.initRunning = false;
             }
-        } catch (error) {
-            return this.logger.debug('### Process Synchronize Transactions ==> Error: ' + error.message);
-        }
+        });
     }
 
     public async initSync(lastLegerVersionAccounts, lastLedgerVersionCSC) {
         let iterator = lastLegerVersionAccounts;
         while (iterator <= lastLedgerVersionCSC) {
             try {
-                const LedgerFinder: LedgerDto = await this.cscApi.getLedger({
+                const LedgerFinder: LedgerDto = await this.casinocoinService.cscAPI.getLedger({
                     ledgerVersion: iterator,
                     includeTransactions: true,
                     includeAllData: true,
@@ -80,7 +82,7 @@ export class SyncTransactionsService {
                                 ...transaction,
                             };
                             // sync accounts
-                            await paymentTransaction(transactionModified, this.cscApi);
+                            await paymentTransaction(transactionModified, this.casinocoinService.cscAPI);
                             // Insert the transaction
                             await this.TransactionsRepository.insert(transactionModified);
                         }
@@ -94,7 +96,7 @@ export class SyncTransactionsService {
                                 accountId : transaction.address,
                                 ...transaction,
                             };
-                            await crnTransaction(transactionModified, this.cscApi);
+                            await crnTransaction(transactionModified, this.casinocoinService.cscAPI);
                             await this.TransactionsRepository.insert(transactionModified);
                         }
 
@@ -107,7 +109,7 @@ export class SyncTransactionsService {
                                 accountId : transaction.address,
                                 ...transaction,
                             };
-                            await kycTransaction(transactionModified, this.cscApi);
+                            await kycTransaction(transactionModified, this.casinocoinService.cscAPI);
                             await this.TransactionsRepository.insert(transactionModified);
                         }
 
@@ -120,7 +122,7 @@ export class SyncTransactionsService {
                                 accountId : transaction.address,
                                 ...transaction,
                             };
-                            await trustTransaction(transactionModified, this.cscApi);
+                            await trustTransaction(transactionModified, this.casinocoinService.cscAPI);
                             await this.TransactionsRepository.insert(transactionModified);
                         }
 

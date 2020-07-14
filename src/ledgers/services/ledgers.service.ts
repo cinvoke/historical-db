@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ledgers } from '../entity/ledger.entity';
 import { LedgerDto } from '../dto/ledgerDTO';
-import { CasinocoinAPI } from '@casinocoin/libjs';
+import { CasinocoinService } from '../../casinocoin/casinocoin.service';
 
 @Injectable()
 export class LedgersService {
@@ -12,6 +12,7 @@ export class LedgersService {
   constructor(
     @InjectRepository(Ledgers)
     private readonly ledgerRepository: Repository<Ledgers>,
+    private casinocoinService: CasinocoinService,
   ) { }
 
   getAll(): Promise<Ledgers[]> {
@@ -27,7 +28,7 @@ export class LedgersService {
       // Get Last Ledger From CasinoCoin
       const actualLegerCSC = await cscApi.getLedgerVersion();
 
-      this.logger.debug(`### Process Synchronize Ledger ==> LastLedgerDB : ${ LastLedgerDB} - actualLegerCSC: ${ actualLegerCSC}`);
+      this.logger.debug(`### Process Synchronize Ledger ==> LastLedgerDB: ${ LastLedgerDB} - actualLegerCSC: ${ actualLegerCSC}`);
 
       LastLedgerDB ? this.initSync(LastLedgerDB - 1, cscApi) : this.initSync(actualLegerCSC, cscApi);
 
@@ -39,7 +40,7 @@ export class LedgersService {
     }
   }
 
-  private async initSync( initLedgerVersion: number, cscApi: CasinocoinAPI) {
+  private async initSync( initLedgerVersion: number, cscApi: any) {
     let iterator: number = initLedgerVersion;
     const ledgerVersionNotFound: number[] = [];
 
@@ -74,7 +75,7 @@ export class LedgersService {
         .getRawOne();
       return sequenceSource.min;
     } catch (err) {
-      console.log('Error get lastLedgerVersion on DataBase');
+      console.log('Error getting lastLedgerVersion from Database: ' + JSON.stringify(err));
       return null;
     }
   }

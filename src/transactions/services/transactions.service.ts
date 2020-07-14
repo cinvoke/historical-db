@@ -6,7 +6,6 @@ import { LedgerDto } from '../../ledgers/dto/ledgerDTO';
 import { TransactionModifiedDTO } from '../dto/transactionModifiedDTO';
 import { InfoAccountDTO } from '../../sync-process/class/dto/infoAccountDTO';
 import { AccVersionService } from '../../account-version/services/acc-version.service';
-import { CasinocoinAPI } from '@casinocoin/libjs';
 import { Accounts } from '../../accounts/entity/account.entity';
 import { AccountsService } from '../../accounts/services/accounts.service';
 
@@ -70,7 +69,7 @@ export class TransactionsService {
 
   // ----------------------------------SyncProcess-----------------------------------------
 
-  public async initSyncTransactions(cscApi: CasinocoinAPI) {
+  public async initSyncTransactions(cscApi: any) {
     this.logger.debug('### Process Synchronize Transactions');
     try {
       // Get Last Ledger From DataBase
@@ -182,7 +181,7 @@ export class TransactionsService {
           .getRawOne();
       return sequenceSource.min;
     } catch (err) {
-        console.log('Error get lastLedgerVersion on DataBase');
+        console.log('Error getting lastLedgerVersion from Database: ' + JSON.stringify(err));
         return null;
     }
   }
@@ -230,7 +229,7 @@ export class TransactionsService {
         await this.accVersionService.insertNewAccountVersion(accountId, getBalancesAccount, getInfoAccount, elements, kycVersionLedger);
 
       } catch (error) {
-        console.log(`Error get info or balance account: ${accountId}`, error);
+        console.log(`Error getting balance info for account: ${accountId}`, error);
       }
     }
   }
