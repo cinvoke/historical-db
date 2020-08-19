@@ -1,5 +1,5 @@
 default:
-  casinocoinServers: '["wss://ws01.casinocoin.org:4443"]'
+  casinocoinServers: '["wss://wst01.casinocoin.org:4443"]'
   serverPort: 3005
   database:
     type: 'mysql' # postgres or mysql/mariadb
