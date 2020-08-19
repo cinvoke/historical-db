@@ -72,24 +72,26 @@ export class TransactionsService {
   public async initSyncTransactions(cscApi: any) {
     this.logger.debug('### Process Synchronize Transactions');
     try {
-      // Get Last Ledger From DataBase
-      const lastLegerDBTransactions = await this.getLastLegerTransactions();
-      let lastLedgerCSC;
-      if (!lastLegerDBTransactions) {
-        lastLedgerCSC = await cscApi.getLedgerVersion();
-      }
       // Get Last Ledger From CasinoCoin
-      this.logger.debug(`### Process Synchronize Transactions ==> lastLegerDB: ${ lastLegerDBTransactions}, lastLedgerCSC: ${lastLedgerCSC} `);
+      const lastLedgerCSC = await cscApi.getLedgerVersion();
+      // Get Last Ledger From DataBase
+      let lastLegerDBTransactions = await this.getLastLegerTransactions();
+      this.logger.debug(`### Process Synchronize Transactions ==> lastLegerDB: ${lastLegerDBTransactions}, lastLedgerCSC: ${lastLedgerCSC}`);
 
-      // compare Last Ledger with leger actually and init Sync in Database
-      if (lastLegerDBTransactions !== 0) {
-        this.initSync(lastLegerDBTransactions ? lastLegerDBTransactions - 1 : lastLedgerCSC, cscApi);
+      if (lastLegerDBTransactions > 0 ) {
+        return this.initSync(lastLegerDBTransactions - 1, cscApi);
         // this.syncService.synchNotifier.next(true);
       }
 
-      if (lastLegerDBTransactions === 0) {
-          return this.logger.debug('### Process Synchronize Transactions ==> Database Is Actualized');
+      if (lastLegerDBTransactions === null) {
+        lastLegerDBTransactions = lastLedgerCSC;
+        return this.initSync(lastLegerDBTransactions, cscApi);
       }
+
+      if (lastLegerDBTransactions === 0) {
+        return this.logger.debug('### Process Synchronize Transactions ==> Database Is Actualized');
+      }
+
     } catch (error) {
         return this.logger.debug('### Process Synchronize Transactions ==> Error: ' + error.message);
     }
@@ -99,16 +101,18 @@ export class TransactionsService {
     let iterator = lastLegerVersionAccounts;
     while (iterator !== 0) {
       try {
-        const LedgerFinder: LedgerDto = await cscApi.getLedger({
-            ledgerVersion: iterator,
-            includeTransactions: true,
-            includeAllData: true,
-            includeState: true,
-        });
-
-        if (LedgerFinder.transactions) {
-          // loop for every transactionCheck
-          await this.processTx(LedgerFinder, cscApi);
+        const findTransaction = await this.transactionRepository.findOne({ ledgerVersion: iterator });
+        if (!findTransaction) {
+          const LedgerFinder: LedgerDto = await cscApi.getLedger({
+              ledgerVersion: iterator,
+              includeTransactions: true,
+              includeAllData: true,
+              includeState: true,
+          });
+          if (LedgerFinder.transactions) {
+            // loop for every transactionCheck
+            await this.processTx(LedgerFinder, cscApi);
+          }
         }
         iterator--;
       } catch (error) {

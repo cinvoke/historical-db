@@ -47,14 +47,21 @@ export class LedgersService {
     while (iterator !== 0) {
       // console.log('iterator', iterator, 'LastLegerVersion', LastLegerVersion);
       try {
-        const LedgerFinder: LedgerDto = await cscApi.getLedger({
-          ledgerVersion: iterator,
-          includeTransactions: true,
-          includeAllData: true,
-          includeState: true,
-        });
-        const transactionCount = LedgerFinder.transactions ? LedgerFinder.transactions.length : 0;
-        if (LedgerFinder) { await this.savedLedger({ status: 'OK', ledgerVersion: iterator, transactionCount, ...LedgerFinder }); }
+        // first find ledger in data base for know if make request to casinocoin
+        const findLedger = await this.ledgerRepository.findOne({ ledgerVersion: iterator });
+        if (!findLedger) {
+          // get ledger from casinocoin
+          const LedgerFinder: LedgerDto = await cscApi.getLedger({
+            ledgerVersion: iterator,
+            includeTransactions: true,
+            includeAllData: true,
+            includeState: true,
+          });
+          // count transactions
+          const transactionCount = LedgerFinder.transactions ? LedgerFinder.transactions.length : 0;
+          // 
+          if (LedgerFinder) { await this.savedLedger({ status: 'OK', ledgerVersion: iterator, transactionCount, ...LedgerFinder }); }
+        }
         iterator--;
       } catch (error) {
         ledgerVersionNotFound.push(iterator);

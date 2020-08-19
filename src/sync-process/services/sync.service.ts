@@ -25,6 +25,7 @@ export class SyncService {
     private readonly ledgersService: LedgersService,
   ) {
     this.logger.debug('### Init SyncGlobalService');
+
     this.casinocoinService.serverConnectedSubject.subscribe( connected => {
       if (connected) {
         // listen for new Ledgers
