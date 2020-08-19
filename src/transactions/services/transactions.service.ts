@@ -75,22 +75,10 @@ export class TransactionsService {
       // Get Last Ledger From CasinoCoin
       const lastLedgerCSC = await cscApi.getLedgerVersion();
       // Get Last Ledger From DataBase
-      let lastLegerDBTransactions = await this.getLastLegerTransactions();
+      const lastLegerDBTransactions = await this.getLastLegerTransactions();
       this.logger.debug(`### Process Synchronize Transactions ==> lastLegerDB: ${lastLegerDBTransactions}, lastLedgerCSC: ${lastLedgerCSC}`);
 
-      if (lastLegerDBTransactions > 0 ) {
-        return this.initSync(lastLegerDBTransactions - 1, cscApi);
-        // this.syncService.synchNotifier.next(true);
-      }
-
-      if (lastLegerDBTransactions === null) {
-        lastLegerDBTransactions = lastLedgerCSC;
-        return this.initSync(lastLegerDBTransactions, cscApi);
-      }
-
-      if (lastLegerDBTransactions === 0) {
-        return this.logger.debug('### Process Synchronize Transactions ==> Database Is Actualized');
-      }
+      return this.initSync(lastLedgerCSC, cscApi);
 
     } catch (error) {
         return this.logger.debug('### Process Synchronize Transactions ==> Error: ' + error.message);
@@ -113,10 +101,12 @@ export class TransactionsService {
             // loop for every transactionCheck
             await this.processTx(LedgerFinder, cscApi);
           }
+        } else {
+          console.log('Ledger transaction of ledger already exits  Nº:' + iterator);
         }
         iterator--;
       } catch (error) {
-        console.log('Error Transaction not Found', error.message + ' Nº:' + iterator, error);
+        this.logger.debug(' ###  Error Transaction not Found' + ' Nº:' + iterator);
         iterator--;
       }
     }
@@ -127,7 +117,7 @@ export class TransactionsService {
   public async processTx(LedgerFinder: LedgerDto, cscApi) {
     let transaction: any;
     for await (transaction of LedgerFinder.transactions) {
-      console.log(`---------------------ledger-${LedgerFinder.ledgerVersion}------------------------` );
+      this.logger.debug(` ###  ---------------------ledger-${LedgerFinder.ledgerVersion}------------------------` );
       // Object Transaction Modified
       const transactionModified: TransactionModifiedDTO = {
         ledgerHash: LedgerFinder.ledgerHash,
@@ -146,31 +136,31 @@ export class TransactionsService {
       }
 
       if (transaction.type === 'setCRNRound') { //
-        console.log('transaction type SetCRNRound ledger:' + LedgerFinder.ledgerVersion);
+        this.logger.debug(' ###  transaction type SetCRNRound ledger:' + LedgerFinder.ledgerVersion);
         // sync VersionAccount
         await this.modifiedTransaction(transactionModified, cscApi);
       }
 
       if (transaction.type === 'kycSet') { // OK
-        console.log('transaction type KYCSet ledger:' + LedgerFinder.ledgerVersion);
+        this.logger.debug(' ###  transaction type KYCSet ledger:' + LedgerFinder.ledgerVersion);
         // sync VersionAccount
         await this.modifiedTransaction(transactionModified, cscApi);
       }
 
       if (transaction.type === 'trustline') { // OK
-        console.log('transaction type trustline ledger:' + LedgerFinder.ledgerVersion);
+        this.logger.debug(' ###  transaction type trustline ledger:' + LedgerFinder.ledgerVersion);
         // sync VersionAccount
         await this.modifiedTransaction(transactionModified, cscApi);
       }
 
       if (transaction.type === 'AccountSet') {
-        console.log('transaction type AccountSet ledger:' + LedgerFinder.ledgerVersion);
+        this.logger.debug(' ###  transaction type AccountSet ledger:' + LedgerFinder.ledgerVersion);
         // sync VersionAccount
         this.setAccountTransaction(transaction);
       }
 
       if (transaction.type === 'feeUpdate') { // OK
-        console.log('transaction type AccountSet ledger:' + LedgerFinder.ledgerVersion);
+        this.logger.debug(' ###  transaction type AccountSet ledger:' + LedgerFinder.ledgerVersion);
         this.setAccountTransaction(transaction);
       }
     }
@@ -185,7 +175,7 @@ export class TransactionsService {
           .getRawOne();
       return sequenceSource.min;
     } catch (err) {
-        console.log('Error getting lastLedgerVersion from Database: ' + JSON.stringify(err));
+        this.logger.debug(' ###  Error getting lastLedgerVersion from Database: ' + JSON.stringify(err));
         return null;
     }
   }
@@ -233,7 +223,7 @@ export class TransactionsService {
         await this.accVersionService.insertNewAccountVersion(accountId, getBalancesAccount, getInfoAccount, elements, kycVersionLedger);
 
       } catch (error) {
-        console.log(`Error getting balance info for account: ${accountId}`, error);
+        this.logger.debug(` ###  Error getting balance info for account: ${accountId}`, error);
       }
     }
   }

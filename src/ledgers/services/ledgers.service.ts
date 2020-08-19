@@ -29,12 +29,12 @@ export class LedgersService {
       const actualLegerCSC = await cscApi.getLedgerVersion();
 
       this.logger.debug(`### Process Synchronize Ledger ==> LastLedgerDB: ${ LastLedgerDB} - actualLegerCSC: ${ actualLegerCSC}`);
+      this.initSync(actualLegerCSC, cscApi);
+      // LastLedgerDB ? this.initSync(LastLedgerDB - 1, cscApi) : this.initSync(actualLegerCSC, cscApi);
 
-      LastLedgerDB ? this.initSync(LastLedgerDB - 1, cscApi) : this.initSync(actualLegerCSC, cscApi);
-
-      if (LastLedgerDB === 0) {
-        return this.logger.debug('### Process Synchronize Ledger ==> Database Is Actualized');
-      }
+      // if (LastLedgerDB === 0) {
+      //   return this.logger.debug('### Process Synchronize Ledger ==> Database Is Actualized');
+      // }
     } catch (error) {
       return this.logger.debug('### Process Synchronize Ledger ==> Error: ' + error.message);
     }
@@ -61,6 +61,8 @@ export class LedgersService {
           const transactionCount = LedgerFinder.transactions ? LedgerFinder.transactions.length : 0;
           // 
           if (LedgerFinder) { await this.savedLedger({ status: 'OK', ledgerVersion: iterator, transactionCount, ...LedgerFinder }); }
+        } else {
+          console.log('Ledger already exits  Nº:' + iterator);
         }
         iterator--;
       } catch (error) {
