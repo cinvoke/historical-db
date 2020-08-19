@@ -1,11 +1,11 @@
 default:
   casinocoinServers: '["wss://wst01.casinocoin.org:4443"]'
-  serverPort: 3005
+  serverPort: 3007
   database:
-    type: 'mysql' # postgres or mysql/mariadb
+    type: 'postgres' # postgres or mysql/mariadb
     host: 'localhost'
-    port: 3306 # 5432 for postgress, 3306 for mysql/mariadb
-    username: 'admin'
-    password: 'admin'
-    database: 'historical'
+    port: 5432 # 5432 for postgress, 3306 for mysql/mariadb
+    username: 'admin' # postgres
+    password: 'admin' # 0000
+    database: 'historical' # historical_Proyect
  

@@ -147,7 +147,7 @@ export class SyncTransactionsService {
                 }
                 iterator++;
             } catch (error) {
-                console.log('Error in initSync', error.message + ' Nº:' + iterator, error);
+                console.log('Error transactions', error.message + ' Nº:' + iterator, error);
                 iterator++;
             }
         }

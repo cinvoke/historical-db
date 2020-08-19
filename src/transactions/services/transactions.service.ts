@@ -116,7 +116,7 @@ export class TransactionsService {
         }
         iterator--;
       } catch (error) {
-        console.log('Error in initSync', error.message + ' Nº:' + iterator, error);
+        console.log('Error Transaction not Found', error.message + ' Nº:' + iterator, error);
         iterator--;
       }
     }
